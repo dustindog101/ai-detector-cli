@@ -1,0 +1,1 @@
+I was working on our database project last night. Relational database management systems ensure robust data consistency through ACID compliance, which plays a pivotal role in enterprise systems. But honestly, MongoDB was way easier to set up when I just needed to store some basic JSON objects without caring about schemas.
