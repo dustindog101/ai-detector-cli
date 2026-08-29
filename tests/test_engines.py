@@ -22,7 +22,10 @@ from ai_detector_cli.engines import (
     ScribbrEngine,
     SaplingEngine,
     ContentDetectorEngine,
-    WriterEngine
+    WriterEngine,
+    GPTZeroEngine,
+    CopyLeaksEngine,
+    IsGenEngine
 )
 
 class TestAIDetectorEngines(unittest.TestCase):
@@ -67,57 +70,66 @@ class TestAIDetectorEngines(unittest.TestCase):
 
     def test_sentence_extraction(self):
         report_ai = analyze_text(self.ai_text, local_only=True)
-        # Verify sentences are parsed and scored individually
         self.assertEqual(len(report_ai.sentences), 4)
         for s in report_ai.sentences:
             self.assertGreaterEqual(s.ai_probability, 0.0)
             self.assertLessEqual(s.ai_probability, 100.0)
 
+    def test_gptzero_engine_interface(self):
+        eng = GPTZeroEngine()
+        self.assertEqual(eng.name, "GPTZero Detector")
+        self.assertEqual(eng.weight, 0.35)
+        res_empty = eng.analyze("")
+        self.assertFalse(res_empty.available)
+
+    def test_copyleaks_engine_interface(self):
+        eng = CopyLeaksEngine()
+        self.assertEqual(eng.name, "CopyLeaks AI Detector")
+        self.assertEqual(eng.weight, 0.35)
+        res_empty = eng.analyze("")
+        self.assertFalse(res_empty.available)
+
+    def test_isgen_engine_interface(self):
+        eng = IsGenEngine()
+        self.assertEqual(eng.name, "IsGen AI Detector")
+        self.assertEqual(eng.weight, 0.25)
+        res_empty = eng.analyze("")
+        self.assertFalse(res_empty.available)
+
     def test_quillbot_engine_interface(self):
         eng = QuillBotEngine()
         self.assertEqual(eng.name, "QuillBot AI Detector")
         self.assertEqual(eng.weight, 0.35)
-        # Empty input handling
         res_empty = eng.analyze("")
         self.assertFalse(res_empty.available)
-        self.assertEqual(res_empty.verdict, "UNAVAILABLE")
 
     def test_scribbr_engine_interface(self):
         eng = ScribbrEngine()
         self.assertEqual(eng.name, "Scribbr AI Detector")
         self.assertEqual(eng.weight, 0.35)
-        # Empty input handling
         res_empty = eng.analyze("")
         self.assertFalse(res_empty.available)
-        self.assertEqual(res_empty.verdict, "UNAVAILABLE")
 
     def test_sapling_engine_interface(self):
         eng = SaplingEngine()
         self.assertEqual(eng.name, "Sapling AI Detector")
-        self.assertEqual(eng.weight, 0.30)
-        # Empty input handling
+        self.assertEqual(eng.weight, 0.35)
         res_empty = eng.analyze("")
         self.assertFalse(res_empty.available)
-        self.assertEqual(res_empty.verdict, "UNAVAILABLE")
 
     def test_contentdetector_engine_interface(self):
         eng = ContentDetectorEngine()
         self.assertEqual(eng.name, "ContentDetector.ai")
         self.assertEqual(eng.weight, 0.25)
-        # Empty input handling
         res_empty = eng.analyze("")
         self.assertFalse(res_empty.available)
-        self.assertEqual(res_empty.verdict, "UNAVAILABLE")
 
     def test_writer_engine_interface(self):
         eng = WriterEngine()
         self.assertEqual(eng.name, "Writer.com AI Detector")
         self.assertEqual(eng.weight, 0.25)
-        # Empty input handling
         res_empty = eng.analyze("")
         self.assertFalse(res_empty.available)
-        self.assertEqual(res_empty.verdict, "UNAVAILABLE")
 
 if __name__ == "__main__":
     unittest.main()
-

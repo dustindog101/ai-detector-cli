@@ -1,6 +1,7 @@
 """
 Main CLI entry point for AI Detector.
-Supports concurrent multi-engine analysis across live public detectors and local models.
+Supports multi-format document loading (.txt, .md, .docx, .pdf, .html, .rtf, .json),
+intelligent character limit handling, and blazing-fast multi-engine analysis.
 """
 
 import sys
@@ -12,13 +13,81 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Any, Optional
 
 from .models import DetectionReport, SentenceAnalysis, EngineResult
-from .engines import ALL_ENGINES, LIVE_WEB_ENGINES, LOCAL_ENGINES
+from .engines import (
+    DEFAULT_ENGINES,
+    LIVE_HTTP_ENGINES,
+    LOCAL_ENGINES,
+    BROWSER_ENGINES,
+    ALL_ENGINES,
+    LIVE_WEB_ENGINES
+)
 from .reporter import (
     format_terminal_report,
     format_comparative_report,
     export_json,
     export_markdown
 )
+
+def load_document(file_path: str) -> str:
+    """
+    Loads text from a wide range of document formats (.txt, .md, .docx, .pdf, .html, .rtf, .json, .csv).
+    """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    ext = os.path.splitext(file_path)[1].lower()
+
+    # 1. Word Documents (.docx)
+    if ext == ".docx":
+        try:
+            import zipfile
+            import xml.etree.ElementTree as ET
+            with zipfile.ZipFile(file_path) as z:
+                xml_content = z.read('word/document.xml')
+                tree = ET.fromstring(xml_content)
+                texts = [node.text for node in tree.iter() if node.text]
+                return "\n".join(texts)
+        except Exception as e:
+            raise ValueError(f"Failed to read .docx file: {e}")
+
+    # 2. PDF Documents (.pdf)
+    elif ext == ".pdf":
+        try:
+            import pypdf
+            reader = pypdf.PdfReader(file_path)
+            extracted = [p.extract_text() for p in reader.pages if p.extract_text()]
+            if extracted:
+                return "\n".join(extracted)
+        except ImportError:
+            pass
+        # Fallback raw extraction for simple text PDFs
+        with open(file_path, "rb") as f:
+            content = f.read().decode("latin-1", errors="ignore")
+            matches = re.findall(r'\(([A-Za-z0-9 ,.!?\'-]+)\)Tj', content)
+            if matches:
+                return " ".join(matches)
+        raise ValueError("Could not extract text from PDF. Install pypdf ('pip install pypdf') for full PDF support.")
+
+    # 3. HTML / Web pages (.html, .htm)
+    elif ext in [".html", ".htm"]:
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            html_raw = f.read()
+        # Strip scripts and tags
+        clean_text = re.sub(r'<script.*?</script>', '', html_raw, flags=re.DOTALL | re.IGNORECASE)
+        clean_text = re.sub(r'<style.*?</style>', '', clean_text, flags=re.DOTALL | re.IGNORECASE)
+        clean_text = re.sub(r'<[^>]+>', ' ', clean_text)
+        return re.sub(r'\s+', ' ', clean_text).strip()
+
+    # 4. Standard Text / Markdown / Code / JSON / RTF (.txt, .md, .markdown, .rtf, .json, .csv)
+    else:
+        for enc in ["utf-8", "latin-1", "utf-16", "cp1252"]:
+            try:
+                with open(file_path, "r", encoding=enc) as f:
+                    return f.read()
+            except UnicodeDecodeError:
+                continue
+        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+            return f.read()
 
 def split_sentences(text: str) -> List[str]:
     raw_sentences = re.split(r'(?<=[.!?])\s+', text.strip())
@@ -28,6 +97,8 @@ def analyze_text(
     text: str,
     live_only: bool = False,
     local_only: bool = False,
+    browser: bool = False,
+    all_engines: bool = False,
     max_workers: int = 5
 ) -> DetectionReport:
     sentences = split_sentences(text)
@@ -55,12 +126,17 @@ def analyze_text(
         )
 
     # Select engines to run
-    if live_only:
+    if all_engines:
+        selected_engines = ALL_ENGINES
+    elif browser:
         selected_engines = LIVE_WEB_ENGINES
+    elif live_only:
+        selected_engines = LIVE_HTTP_ENGINES
     elif local_only:
         selected_engines = LOCAL_ENGINES
     else:
-        selected_engines = ALL_ENGINES
+        # Default: Blazing-Fast Suite (ZeroGPT HTTP + Sapling HTTP + 4 Statistical Engines) -> < 0.5s!
+        selected_engines = DEFAULT_ENGINES
 
     # 1. Run selected engines concurrently using ThreadPoolExecutor
     engine_results: Dict[str, EngineResult] = {}
@@ -115,11 +191,11 @@ def analyze_text(
     zerogpt_res = engine_results.get("zerogpt")
     zerogpt_flagged_texts = set(zerogpt_res.flagged_sentences if zerogpt_res else [])
 
-    quillbot_res = engine_results.get("quillbot")
-    quillbot_flagged = set(quillbot_res.flagged_sentences if quillbot_res else [])
-
     sapling_res = engine_results.get("sapling")
     sapling_flagged = set(sapling_res.flagged_sentences if sapling_res else [])
+
+    quillbot_res = engine_results.get("quillbot")
+    quillbot_flagged = set(quillbot_res.flagged_sentences if quillbot_res else [])
 
     lengths = [len(re.findall(r'\b[A-Za-z0-9\'-]+\b', s)) for s in sentences]
     mean_len = sum(lengths) / len(lengths) if lengths else 0
@@ -140,14 +216,14 @@ def analyze_text(
             reasons.append("ZeroGPT Cloud Flag")
             s_ai_prob += 40.0
 
+        # Check Sapling match
+        if s in sapling_flagged or any(s in f or f in s for f in sapling_flagged):
+            reasons.append("Sapling Cloud Flag")
+            s_ai_prob += 35.0
+
         # Check QuillBot match
         if s in quillbot_flagged or any(s in f or f in s for f in quillbot_flagged):
             reasons.append("QuillBot Highlight")
-            s_ai_prob += 30.0
-
-        # Check Sapling match
-        if s in sapling_flagged or any(s in f or f in s for f in sapling_flagged):
-            reasons.append("Sapling Highlight")
             s_ai_prob += 30.0
 
         # Check banned words in this sentence
@@ -212,12 +288,14 @@ def analyze_text(
 def main():
     parser = argparse.ArgumentParser(
         prog="ai-detect",
-        description="Multi-Engine AI Text Detector CLI (Queries Live Public Detectors + Statistical Models in Parallel)"
+        description="Multi-Format AI Text Detector CLI (Supports .docx, .pdf, .md, .txt, .html with Fast HTTP Detection)"
     )
-    parser.add_argument("file", nargs="?", help="Path to text or markdown file to audit")
-    parser.add_argument("--compare", "-c", nargs=2, metavar=("ORIGINAL", "MODIFIED"), help="Compare original vs modified text files across all engines")
-    parser.add_argument("--live-only", action="store_true", help="Run only the 5 public online GPT detectors (ZeroGPT, QuillBot, Sapling, Scribbr, Writer)")
+    parser.add_argument("file", nargs="?", help="Path to text, markdown, docx, or pdf document to audit")
+    parser.add_argument("--compare", "-c", nargs=2, metavar=("ORIGINAL", "MODIFIED"), help="Compare original vs modified documents across all engines")
+    parser.add_argument("--live-only", action="store_true", help="Run only the live direct HTTP cloud detectors (ZeroGPT, Sapling)")
     parser.add_argument("--local-only", action="store_true", help="Run only local statistical engines (GLTR, Burstiness, Perplexity, Lexicon) without network requests")
+    parser.add_argument("--browser", action="store_true", help="Include Playwright browser automation engines (QuillBot, Scribbr, Writer)")
+    parser.add_argument("--all", action="store_true", help="Run every single engine (HTTP + Browser + Local)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Show full verbose diagnostic output and engine details")
     parser.add_argument("--json", action="store_true", help="Output results in JSON format")
     parser.add_argument("--export", "-e", metavar="OUTPUT_PATH", help="Export full report to a Markdown (.md) or JSON (.json) file")
@@ -229,28 +307,30 @@ def main():
 
     # Mode 1: Comparative Audit
     if args.compare:
-        with open(args.compare[0], "r", encoding="utf-8") as f1, open(args.compare[1], "r", encoding="utf-8") as f2:
-            text1 = f1.read()
-            text2 = f2.read()
-        rep1 = analyze_text(text1, live_only=args.live_only, local_only=args.local_only)
-        rep2 = analyze_text(text2, live_only=args.live_only, local_only=args.local_only)
+        text1 = load_document(args.compare[0])
+        text2 = load_document(args.compare[1])
+        rep1 = analyze_text(text1, live_only=args.live_only, local_only=args.local_only, browser=args.browser, all_engines=args.all)
+        rep2 = analyze_text(text2, live_only=args.live_only, local_only=args.local_only, browser=args.browser, all_engines=args.all)
         print(format_comparative_report(rep1, rep2))
         if rep2.consensus_ai_probability > args.threshold:
             sys.exit(1)
         sys.exit(0)
 
-    # Mode 2: Single Text Audit
+    # Mode 2: Single Text / Document Audit
     if args.stdin or (not sys.stdin.isatty() and not args.file):
         text = sys.stdin.read()
     elif args.file:
-        with open(args.file, "r", encoding="utf-8") as f:
-            text = f.read()
+        try:
+            text = load_document(args.file)
+        except Exception as e:
+            print(f"❌ Error loading document: {e}")
+            sys.exit(1)
     else:
-        print("Usage: ai-detect <file.txt> or pipe input. Run 'ai-detect --help' for options.\n")
+        print("Usage: ai-detect <file.docx | file.pdf | file.md | file.txt> or pipe input. Run 'ai-detect --help' for options.\n")
         text = "When evaluating relational databases versus NoSQL solutions, it is crucial to delve into the multifaceted trade-offs. Furthermore, scalability plays a pivotal role in modern software architecture. For instance, developers can optimize latency, enhance reliability, and bolster data integrity. In conclusion, understanding these nuances is paramount for fostering long-term technological success."
         print("Running benchmark on standard AI sample text:\n")
 
-    report = analyze_text(text, live_only=args.live_only, local_only=args.local_only)
+    report = analyze_text(text, live_only=args.live_only, local_only=args.local_only, browser=args.browser, all_engines=args.all)
 
     # Handle Exports
     if args.export:

@@ -1,6 +1,7 @@
 """
 Engine 1: ZeroGPT Live Cloud API Engine
 Performs live HTTP queries to ZeroGPT detection backend and extracts sentence-level flags.
+Safely handles document size limits (max 14,000 chars).
 """
 
 import json
@@ -10,13 +11,30 @@ from typing import List, Dict, Any
 from .base import BaseEngine
 from ..models import EngineResult
 
+MAX_ZEROGPT_CHARS = 14000
+
 class ZeroGPTEngine(BaseEngine):
     name = "ZeroGPT Live Cloud API"
     weight = 0.35
 
-    def analyze(self, text: str, sentences: List[str], words: List[str]) -> EngineResult:
+    def analyze(self, text: str, sentences: List[str] = None, words: List[str] = None) -> EngineResult:
+        if not text or not text.strip():
+            return EngineResult(
+                engine_name=self.name,
+                available=False,
+                ai_percentage=0.0,
+                human_percentage=100.0,
+                verdict="UNAVAILABLE",
+                weight=0.0,
+                error="Input text is empty"
+            )
+
+        # Safe truncation for large documents
+        query_text = text[:MAX_ZEROGPT_CHARS]
+        is_truncated = len(text) > MAX_ZEROGPT_CHARS
+
         url = "https://api.zerogpt.com/api/detect/detectText"
-        payload = json.dumps({"input_text": text}).encode("utf-8")
+        payload = json.dumps({"input_text": query_text}).encode("utf-8")
         headers = {
             "Content-Type": "application/json",
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -47,8 +65,9 @@ class ZeroGPTEngine(BaseEngine):
                         details={
                             "feedback": feedback,
                             "ai_words": data.get("aiWords", 0),
-                            "total_words": data.get("textWords", len(words)),
-                            "is_human_score": data.get("isHuman", 100)
+                            "total_words": data.get("textWords", len(words) if words else len(text.split())),
+                            "is_human_score": data.get("isHuman", 100),
+                            "truncated": is_truncated
                         },
                         flagged_sentences=flagged_sentences
                     )
