@@ -1,12 +1,16 @@
 name: AI Code Review
 
-# Provider-agnostic AI review of pull requests. Uses whichever provider is
-# configured on the repo, tried in this order:
-#   1. GEMINI_API_KEY     -> Google Gemini REST API (free tier is enough)
-#   2. ANTHROPIC_API_KEY  -> Claude Code CLI in print mode (`claude -p`)
-#   3. OPENAI_API_KEY     -> OpenAI chat completions API
-# With none set the job exits green with a notice — PRs never fail.
-# Optional repo *variables* to pin models: GEMINI_MODEL, CLAUDE_MODEL, OPENAI_MODEL.
+# Provider-agnostic AI review of pull requests. Uses whichever AI is
+# available, tried in this order:
+#   1. agy CLI installed on the runner     -> local `agy` (zero secrets needed)
+#   2. claude CLI installed on the runner  -> local `claude -p` (zero secrets needed)
+#   3. ANTHROPIC_API_KEY secret            -> installs Claude Code CLI, `claude -p`
+#   4. GEMINI_API_KEY secret               -> Google Gemini REST API (free tier is enough)
+#   5. OPENAI_API_KEY secret               -> OpenAI chat completions API
+# Self-hosted runners / local `act` runs pick up an installed CLI automatically;
+# GitHub-hosted runners fall back to whichever secret is configured.
+# With none available the job exits green with a notice — PRs never fail.
+# Optional repo *variables* to pin models: AGY_MODEL, CLAUDE_MODEL, GEMINI_MODEL, OPENAI_MODEL.
 
 on:
   pull_request:
@@ -32,6 +36,7 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AGY_MODEL: ${{ vars.AGY_MODEL }}
       GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
       CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
       OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
@@ -42,20 +47,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Pick the AI provider (first configured wins)
+      - name: Pick the AI provider (first available wins)
         id: provider
         run: |
-          if [ -n "${GEMINI_API_KEY}" ]; then
-            provider=gemini
-            model="${GEMINI_MODEL:-gemini-2.5-flash}"
+          if command -v agy >/dev/null 2>&1; then
+            # Locally installed agy CLI — already authenticated on this machine.
+            provider=agy
+            model="${AGY_MODEL:-local agy}"
+          elif command -v claude >/dev/null 2>&1; then
+            # Locally installed Claude Code CLI — already authenticated on this machine.
+            provider=claude-local
+            model="${CLAUDE_MODEL:-local claude}"
           elif [ -n "${ANTHROPIC_API_KEY}" ]; then
             provider=claude
             model="${CLAUDE_MODEL:-claude CLI default}"
+          elif [ -n "${GEMINI_API_KEY}" ]; then
+            provider=gemini
+            model="${GEMINI_MODEL:-gemini-2.5-flash}"
           elif [ -n "${OPENAI_API_KEY}" ]; then
             provider=openai
             model="${OPENAI_MODEL:-gpt-4o-mini}"
           else
-            echo "::notice::No AI provider configured — add ONE repo secret to enable AI code review: GEMINI_API_KEY (Gemini free tier, key: https://aistudio.google.com) or ANTHROPIC_API_KEY (Claude via 'claude -p') or OPENAI_API_KEY (OpenAI)."
+            echo "::notice::No AI provider available — install the agy or Claude Code CLI on the runner (used automatically, zero secrets), or add ONE repo secret: ANTHROPIC_API_KEY (Claude via 'claude -p') or GEMINI_API_KEY (Gemini free tier, key: https://aistudio.google.com) or OPENAI_API_KEY (OpenAI)."
             provider=none
             model=none
           fi
@@ -147,6 +160,31 @@ jobs:
           set +e # provider hiccups must never fail the PR
 
           case "$PROVIDER" in
+            agy)
+              # Local agy CLI — reads the prompt on stdin, writes the review to stdout.
+              timeout 480 agy < /tmp/review_prompt.txt > review.md 2> agy_err.txt
+              rc=$?
+              if [ "${rc}" -ne 0 ] || [ ! -s review.md ]; then
+                echo "::warning::Local agy CLI review failed (exit ${rc}). Skipping review — the PR is unaffected."
+                head -c 1000 agy_err.txt 2>/dev/null || true
+                exit 0
+              fi
+              ;;
+
+            claude-local)
+              # Local Claude Code CLI in print mode — already installed and authenticated.
+              model_args=()
+              if [ -n "${CLAUDE_MODEL}" ]; then model_args=(--model "${CLAUDE_MODEL}"); fi
+              timeout 480 claude -p --output-format text "${model_args[@]}" \
+                < /tmp/review_prompt.txt > review.md 2> claude_err.txt
+              rc=$?
+              if [ "${rc}" -ne 0 ] || [ ! -s review.md ]; then
+                echo "::warning::Local Claude CLI review failed (exit ${rc}). Skipping review — the PR is unaffected."
+                head -c 1000 claude_err.txt 2>/dev/null || true
+                exit 0
+              fi
+              ;;
+
             gemini)
               # Google Gemini — plain REST call, free tier is enough.
               http_code=$(curl -sS -o response.json -w '%{http_code}' \
@@ -203,7 +241,7 @@ jobs:
 
           provider = os.environ.get("PROVIDER", "")
 
-          if provider == "claude":
+          if provider in ("agy", "claude", "claude-local"):
               # The CLI already wrote plain markdown to review.md.
               text = open("review.md", encoding="utf-8", errors="replace").read().strip()
           else:
@@ -248,7 +286,7 @@ jobs:
             echo ""
             cat review.md
             echo ""
-            echo "<sub>Automated review — may contain mistakes. Configure GEMINI_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY secrets, or set GEMINI_MODEL / CLAUDE_MODEL / OPENAI_MODEL repo variables to change models.</sub>"
+            echo "<sub>Automated review — may contain mistakes. Uses a locally installed agy / Claude Code CLI when present, otherwise the ANTHROPIC_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY secret. Repo variables AGY_MODEL / CLAUDE_MODEL / GEMINI_MODEL / OPENAI_MODEL pin models.</sub>"
           } > "$body_file"
 
           # Wrap the markdown body as a JSON request body (no jq dependency).
