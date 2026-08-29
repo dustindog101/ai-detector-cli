@@ -226,12 +226,12 @@ class TestHTMLExport(unittest.TestCase):
         self.assertIn("Per-File Results", html)
 
     def test_pdf_report_academic_layout(self):
-        try:
-            from ai_detector_cli import pdf_report
-        except SystemExit:
-            self.skipTest("reportlab not installed (install the [pdf] extra)")
+        from ai_detector_cli import pdf_report
         report = analyze_text(_load("ai_sample.txt"), local_only=True, source="x.md")
-        data = pdf_report.export_pdf_bytes(report)
+        try:
+            data = pdf_report.export_pdf_bytes(report)
+        except pdf_report.PdfExportUnavailable:
+            self.skipTest("PDF export unavailable (needs Python 3.9+ with [pdf] extra)")
         self.assertTrue(data.startswith(b"%PDF"), "PDF magic missing")
         self.assertGreater(len(data), 5000, "PDF suspiciously small")
         # Readable metadata via pypdf (installed with the [pdf] extra)
@@ -248,12 +248,12 @@ class TestHTMLExport(unittest.TestCase):
             self.skipTest("pypdf not installed")
 
     def test_batch_pdf_report(self):
-        try:
-            from ai_detector_cli import pdf_report
-        except SystemExit:
-            self.skipTest("reportlab not installed (install the [pdf] extra)")
+        from ai_detector_cli import pdf_report
         batch = run_batch(SAMPLES, threshold=30.0, local_only=True)
-        data = pdf_report.export_batch_pdf_bytes(batch)
+        try:
+            data = pdf_report.export_batch_pdf_bytes(batch)
+        except pdf_report.PdfExportUnavailable:
+            self.skipTest("PDF export unavailable (needs Python 3.9+ with [pdf] extra)")
         self.assertTrue(data.startswith(b"%PDF"))
         self.assertGreater(len(data), 3000)
 

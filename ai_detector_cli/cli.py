@@ -705,9 +705,13 @@ def _write_export(path: str, report: Optional[DetectionReport] = None, batch_rep
             f.write(content)
         return
     if lower.endswith(".pdf"):
-        from .pdf_report import export_pdf_bytes, export_batch_pdf_bytes
-        content = (export_pdf_bytes(report) if report is not None
-                   else export_batch_pdf_bytes(batch_report))  # type: ignore[arg-type]
+        from .pdf_report import (PdfExportUnavailable, export_batch_pdf_bytes,
+                                 export_pdf_bytes)
+        try:
+            content = (export_pdf_bytes(report) if report is not None
+                       else export_batch_pdf_bytes(batch_report))  # type: ignore[arg-type]
+        except PdfExportUnavailable as exc:
+            raise SystemExit(str(exc)) from exc
         with open(path, "wb") as f:
             f.write(content)
         return

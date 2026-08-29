@@ -37,6 +37,10 @@ _PDF_REQUIREMENT_NOTE = (
     "pip install 'ai-detector-cli[pdf]'")
 
 
+class PdfExportUnavailable(RuntimeError):
+    """Raised when reportlab is missing or the runtime cannot run it."""
+
+
 def _require_reportlab():
     """Import reportlab and verify the runtime actually supports it.
 
@@ -49,11 +53,11 @@ def _require_reportlab():
         import reportlab  # noqa: F401
         from reportlab import platypus  # noqa: F401
     except ImportError as exc:
-        raise SystemExit(_PDF_REQUIREMENT_NOTE) from exc
+        raise PdfExportUnavailable(_PDF_REQUIREMENT_NOTE) from exc
     try:
         hashlib.md5(b"probe", usedforsecurity=False)
     except TypeError as exc:
-        raise SystemExit(_PDF_REQUIREMENT_NOTE) from exc
+        raise PdfExportUnavailable(_PDF_REQUIREMENT_NOTE) from exc
 
 
 def _verdict_color(ai_pct: float) -> str:
@@ -423,7 +427,7 @@ def export_pdf_bytes(report: DetectionReport) -> bytes:
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.colors import HexColor
     except ImportError as exc:
-        raise SystemExit(_PDF_REQUIREMENT_NOTE) from exc
+        raise PdfExportUnavailable(_PDF_REQUIREMENT_NOTE) from exc
 
     st = _build_styles()
     rid = _report_id(report.source, f"{report.consensus_ai_probability:.1f}")
