@@ -13,7 +13,6 @@ from typing import List, Dict, Any, Optional
 from .base import BaseEngine
 from ..models import EngineResult
 
-DEFAULT_CHROME_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 MAX_GPTZERO_CHARS = 5000
 
 class GPTZeroEngine(BaseEngine):
@@ -23,12 +22,12 @@ class GPTZeroEngine(BaseEngine):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        executable_path: str = DEFAULT_CHROME_PATH,
+        executable_path: Optional[str] = None,
         headless: bool = True,
         timeout_ms: int = 35000
     ):
         self.api_key = api_key or os.environ.get("GPTZERO_API_KEY")
-        self.executable_path = executable_path if os.path.exists(executable_path) else None
+        self.executable_path = executable_path  # None -> stealth auto-discovery
         self.headless = headless
         self.timeout_ms = timeout_ms
 

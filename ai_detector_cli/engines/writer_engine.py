@@ -11,7 +11,6 @@ from typing import List, Dict, Any, Optional
 from .base import BaseEngine
 from ..models import EngineResult
 
-DEFAULT_CHROME_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 class WriterEngine(BaseEngine):
     name = "Writer.com AI Detector"
@@ -19,11 +18,11 @@ class WriterEngine(BaseEngine):
 
     def __init__(
         self,
-        executable_path: str = DEFAULT_CHROME_PATH,
+        executable_path: Optional[str] = None,
         headless: bool = True,
         timeout_ms: int = 30000
     ):
-        self.executable_path = executable_path if os.path.exists(executable_path) else None
+        self.executable_path = executable_path  # None -> stealth auto-discovery
         self.headless = headless
         self.timeout_ms = timeout_ms
 

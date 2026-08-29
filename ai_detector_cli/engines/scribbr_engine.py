@@ -13,15 +13,14 @@ from .base import BaseEngine
 from ..models import EngineResult
 from ..stealth import get_stealth_browser
 
-DEFAULT_CHROME_PATH = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 MAX_SCRIBBR_WORDS = 1100
 
 class ScribbrEngine(BaseEngine):
     name = "Scribbr AI Detector"
     weight = 0.35
 
-    def __init__(self, executable_path: str = DEFAULT_CHROME_PATH, headless: bool = True, timeout_ms: int = 35000):
-        self.executable_path = executable_path if os.path.exists(executable_path) else None
+    def __init__(self, executable_path: Optional[str] = None, headless: bool = True, timeout_ms: int = 35000):
+        self.executable_path = executable_path  # None -> stealth auto-discovery
         self.headless = headless
         self.timeout_ms = timeout_ms
 
