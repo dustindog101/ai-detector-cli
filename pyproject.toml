@@ -4,17 +4,58 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-detector-cli"
-version = "1.0.0"
-description = "Multi-Engine AI Text Detector CLI Suite with ZeroGPT Cloud Integration, GLTR, Burstiness, and Sentence Extraction"
+version = "2.0.0"
+description = "Multi-engine AI text detector CLI: live cloud APIs (ZeroGPT, Sapling), stealth browser engines, and local statistical models with batch scanning and HTML reports"
 readme = "README.md"
-authors = [{ name = "Research Engineering" }]
+license = { text = "MIT" }
+authors = [{ name = "dustindog101" }]
 requires-python = ">=3.8"
+keywords = [
+    "ai-detector", "ai-text-detection", "gpt-detector", "zerogpt", "gptzero",
+    "sapling", "burstiness", "gltr", "stylometry", "cli", "plagiarism",
+]
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Utilities",
 ]
 dependencies = []
 
+[project.optional-dependencies]
+browser = ["patchright>=1.40"]
+pdf = ["pypdf>=3.0"]
+dev = ["ruff>=0.4", "build>=1.0"]
+
+[project.urls]
+Homepage = "https://github.com/dustindog101/ai-detector-cli"
+Repository = "https://github.com/dustindog101/ai-detector-cli"
+Issues = "https://github.com/dustindog101/ai-detector-cli/issues"
+Changelog = "https://github.com/dustindog101/ai-detector-cli/blob/main/CHANGELOG.md"
+
 [project.scripts]
 ai-detect = "ai_detector_cli.cli:main"
+
+[tool.setuptools]
+packages = ["ai_detector_cli", "ai_detector_cli.engines"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+ignore = ["E501"]

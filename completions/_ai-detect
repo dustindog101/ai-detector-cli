@@ -1,0 +1,45 @@
+#compdef ai-detect
+# zsh completion for ai-detect
+
+_ai_detect() {
+    local -a flags
+    flags=(
+        '(--compare -c)'{--compare,-c}'[compare original vs modified documents]:original:->files :modified:->files'
+        '(--batch -b)'{--batch,-b}'[batch-scan every document in a directory]:dir:->dirs'
+        '(--recursive -r)'--recursive'[recurse into subdirectories with --batch]'
+        '--glob[only files matching this glob with --batch]:pattern:'
+        '--live-only[run only live HTTP cloud detectors]'
+        '--local-only[run only local statistical engines]'
+        '--browser[include browser automation engines]'
+        '--all[run every engine]'
+        '--engines[comma-separated engine keys]:engines:->engine_keys'
+        '--list-engines[list registered engines and exit]'
+        '(--workers -w)'{--workers,-w}'[max concurrent workers]:workers:'
+        '--timeout[global HTTP timeout seconds]:seconds:'
+        '(--verbose -v)'{--verbose,-v}'[verbose diagnostics]'
+        '--json[output JSON]'
+        '(--export -e)'{--export,-e}'[export report]:file:->files'
+        '--no-sentences[hide sentence breakdown]'
+        '(--threshold -t)'{--threshold,-t}'[max AI percent for exit 0]:threshold:'
+        '--stdin[read from stdin]'
+        '1:document:->files'
+    )
+
+    _arguments -S $flags
+
+    case $state in
+        files)
+            _files -g '*.(txt|md|markdown|rtf|json|csv|html|htm|docx|pdf)'
+            ;;
+        dirs)
+            _directories
+            ;;
+        engine_keys)
+            local -a engines
+            engines=(zerogpt sapling gltr burstiness perplexity lexicon gptzero copyleaks quillbot scribbr writer contentdetector isgen)
+            _values -s , $engines
+            ;;
+    esac
+}
+
+_ai_detect "$@"

@@ -1,27 +1,23 @@
-# Python bytecode & cache
+# Python
 __pycache__/
 *.py[cod]
-*$py.class
-*.pyc
-
-# Environment & Virtualenvs
-.env
-.venv
-env/
-venv/
-ENV/
-
-# Playwright & Browser artifacts
-.playwright/
-test-results/
-
-# Distribution & Build
-build/
-dist/
 *.egg-info/
 .eggs/
+build/
+dist/
+.venv/
+venv/
+.tox/
+.pytest_cache/
+.ruff_cache/
 
-# IDE & OS
-.DS_Store
-.idea/
+# Editors / OS
 .vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Project
+*.report.html
+audit_report.*
+aidetect-env/

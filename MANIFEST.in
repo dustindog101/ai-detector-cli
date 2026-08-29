@@ -1,0 +1,10 @@
+include LICENSE
+include README.md
+include CHANGELOG.md
+include CONTRIBUTING.md
+include bin/ai-detect
+recursive-include completions *
+recursive-include docs *
+recursive-include tests *.py *.txt *.html
+recursive-exclude * __pycache__
+recursive-exclude * *.pyc
