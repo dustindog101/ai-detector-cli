@@ -6,11 +6,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-**Audit text against 13 detection engines simultaneously** — live cloud APIs
-(ZeroGPT, Sapling), stealth-browser detectors (GPTZero, QuillBot, Scribbr,
-Writer, CopyLeaks, and more), and instant local statistical models (GLTR,
-burstiness, perplexity, AI-lexicon tells) — and get one weighted consensus
-score with sentence-level explanations.
+**Audit text against 19 detection engines simultaneously** — live cloud APIs
+(ZeroGPT, Sapling), premium key-based APIs (GPTZero, Pangram, Winston AI,
+Originality.ai, Detecting-AI — auto-activate when you set a key), an academic-
+grade local neural detector (Binoculars), stealth-browser detectors (GPTZero,
+QuillBot, Scribbr, Writer, CopyLeaks, and more), and instant local statistical
+models (GLTR, burstiness, perplexity, AI-lexicon tells) — and get one weighted
+consensus score with sentence-level explanations.
 
 ```
  🛡️  MULTI-ENGINE AI TEXT DETECTION CONSENSUS AUDIT
@@ -65,8 +67,30 @@ Flags: `--prefix DIR` · `--ref REF` · `--repo URL` · `--no-completions`
 ```bash
 pip install ai-detector-cli
 # optional extras:
-pip install "ai-detector-cli[browser]"   # stealth browser engines (patchright)
-pip install "ai-detector-cli[pdf]"       # full .pdf text extraction (pypdf)
+pip install "ai-detector-cli[browser]"     # stealth browser engines (patchright)
+pip install "ai-detector-cli[pdf]"         # full .pdf text extraction (pypdf)
+pip install "ai-detector-cli[binoculars]"  # local neural detector (torch + transformers)
+```
+
+**Premium engines (optional):** export any API key and that engine auto-joins
+every run — no flags needed:
+
+```bash
+export GPTZERO_API_KEY=...      # free tier - https://dashboard.gptzero.me
+export PANGRAM_API_KEY=...      # free tier - https://www.pangram.com
+export WINSTON_API_KEY=...      # trial     - https://gowinston.ai
+export ORIGINALITY_API_KEY=...  # paid      - https://app.originality.ai/api-access
+export DETECTING_AI_API_KEY=... # free tier - https://detecting-ai.com
+```
+
+**Binoculars (optional, local neural):** 93%+ AUROC zero-shot detector from
+ICML 2024 — runs fully offline once models are downloaded (~13 GB for Falcon-7B
+pair, or ~3 GB with the TinyLlama pair):
+
+```bash
+pip install "ai-detector-cli[binoculars]"
+export AIDETECT_BINOCULARS=1               # auto-include in default runs
+ai-detect --engines binoculars report.md   # or run it standalone
 ```
 
 ### pipx / uv (one-shot)
@@ -125,13 +149,21 @@ usage: ai-detect [file] [-c ORIG MOD] [-b DIR] [flags]
 | Tier | Engines | Speed | Network |
 | :--- | :--- | :--- | :--- |
 | **Live HTTP** (default) | ZeroGPT, Sapling | ~0.3–1 s | Yes |
+| **Premium API** (auto when key set) | GPTZero Official, Pangram, Winston AI, Originality.ai, Detecting-AI | ~0.5–5 s | Yes |
+| **Local neural** (`--engines binoculars` / `AIDETECT_BINOCULARS=1`) | Binoculars (Falcon-7B pair, ICML 2024) | ~2–60 s first run | None* |
 | **Local statistical** (default) | GLTR token-rank, Burstiness σ/μ, Perplexity/entropy, PubMed AI-lexicon | < 5 ms each | None |
 | **Stealth browser** (`--browser`) | GPTZero, CopyLeaks, QuillBot, Scribbr, Writer, ContentDetector.ai, IsGen | 10–60 s | Yes |
 
-Full endpoint reference — payloads, limits, response schemas, quirks, key
-expiry notes — lives in [`docs/ENGINES.md`](docs/ENGINES.md). The consensus is
-a weighted average of available engines; unavailable engines simply drop out
-of the denominator.
+\* first run downloads model weights; afterwards fully offline.
+
+Premium engines require their `*_API_KEY` environment variable (see
+[Premium engines](#premium-engines-optional) above). Binoculars needs the
+`[binoculars]` extra and can be tuned with `AIDETECT_BINOCULARS_OBSERVER_MODEL` /
+`AIDETECT_BINOCULARS_PERFORMER_MODEL` (any tokenizer-compatible pair, e.g. the
+TinyLlama pair for low-RAM machines). Full endpoint reference — payloads,
+limits, response schemas, quirks, key expiry notes — lives in
+[`docs/ENGINES.md`](docs/ENGINES.md). The consensus is a weighted average of
+available engines; unavailable engines simply drop out of the denominator.
 
 ### Benchmarks (local-only tier, 3.12 on Linux)
 
@@ -158,7 +190,8 @@ dashboards.
 
 ## Roadmap / Ideas
 
-- [ ] Optional local transformer baseline (ONNX) as a 5th tier
+- [x] Local neural detector (Binoculars, v2.1)
+- [x] Premium key-based API engines (GPTZero, Pangram, Winston, Originality.ai, Detecting-AI, v2.1)
 - [ ] SARIF output for code-review integration
 - [ ] `--watch` mode for live re-scanning while writing
 - [ ] Pluggable custom engines via entry points

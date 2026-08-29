@@ -4,6 +4,47 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] - 2026-08-29
+
+### Added
+- **Five premium key-based API engines** that auto-activate the moment their
+  environment variable is set (no flags needed):
+  - `gptzero-api` — GPTZero Official REST API (`GPTZERO_API_KEY`, free tier),
+    with per-sentence `generated_prob` flags.
+  - `pangram` — Pangram Labs async task API (`PANGRAM_API_KEY`, free tier);
+    benchmark-topping accuracy, segment-level flags.
+  - `winston` — Winston AI v2.0 API (`WINSTON_API_KEY`), sentence flags.
+  - `originality` — Originality.ai scan API (`ORIGINALITY_API_KEY`, paid).
+  - `detecting-ai` — Detecting-AI.com v3 detector (`DETECTING_AI_API_KEY`,
+    free tier) with defensive structured/textual result parsing.
+  All endpoints and auth shapes were verified live on 2026-08-29; missing keys
+  produce an `UNAVAILABLE` result with the sign-up URL instead of noise.
+- **Binoculars local neural engine** (`binoculars`): zero-shot detector from
+  "Spotting LLMs With Binoculars" (Hans et al., ICML 2024) implementing the
+  official perplexity/cross-perplexity ratio with the official 0.90133
+  threshold (~0.93 AUROC). Fully offline; opt-in via the new
+  `[binoculars]` extra and `AIDETECT_BINOCULARS=1`, with env-configurable
+  model pairs (`AIDETECT_BINOCULARS_OBSERVER_MODEL` /
+  `AIDETECT_BINOCULARS_PERFORMER_MODEL`, e.g. the TinyLlama pair for ~3 GB RAM).
+- `--list-engines` now shows the premium tier with per-engine ACTIVE/inactive
+  state and the Binoculars row.
+- `scripts/test_premium_engines.py`: live verification harness for all five
+  premium engines (runs against the real APIs when keys are exported).
+- Shell completions (bash/zsh/fish) updated with the six new engine keys.
+
+### Changed
+- **Engine registry**: total count is now 19 (2 core HTTP + 5 premium + 4
+  statistical + 1 neural + 7 browser). Premium engines deduplicate correctly
+  across suites and can be targeted with `--engines <key>` even when inactive.
+- **Degradation semantics fixed**: the report is only marked `degraded` when
+  *every* live engine fails; a partial live failure (e.g. ZeroGPT down,
+  Sapling up) no longer falsely claims a local-only fallback.
+- Sentence-level cloud flags now also consume GPTZero, Winston and Pangram
+  flagged segments.
+- README engine matrix, `docs/ENGINES.md` endpoint reference (new Premium +
+  Binoculars sections with verified request/response schemas), and pyproject
+  metadata updated for v2.1.0.
+
 ## [2.0.0] - 2026-08-29
 
 ### Added

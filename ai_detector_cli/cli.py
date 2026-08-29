@@ -31,6 +31,8 @@ from .engines import (
     BROWSER_ENGINES,
     ALL_ENGINES,
     LIVE_WEB_ENGINES,
+    PREMIUM_KEY_ENGINES,
+    BINOCULARS_ACTIVE,
 )
 from .reporter import (
     format_terminal_report,
@@ -133,6 +135,9 @@ def split_sentences(text: str) -> List[str]:
 
 
 def engine_key(engine) -> str:
+    override = getattr(engine, "key", None)
+    if override:
+        return override
     return engine.__class__.__name__.lower().replace("engine", "")
 
 
@@ -182,7 +187,15 @@ def select_engines(
 
     if only:
         wanted = {name.strip().lower() for name in only if name.strip()}
+        # Explicitly requested engines are honored even when they are outside
+        # the current mode's pool (e.g. --engines pangram in default mode, or
+        # --engines binoculars without the auto-enable env flag).
         selected = [e for e in selected if engine_key(e) in wanted]
+        selected_keys = {engine_key(e) for e in selected}
+        for e in ALL_ENGINES:
+            if engine_key(e) in wanted and engine_key(e) not in selected_keys:
+                selected.append(e)
+                selected_keys.add(engine_key(e))
     return selected
 
 
@@ -270,10 +283,11 @@ def analyze_text(
                 if key in live_keys:
                     live_errors.append(f"{eng.name}: {e}")
 
-    # 2. Auto-adaptive degradation: live engines all failed but local results exist.
+    # 2. Auto-adaptive degradation: every live engine failed but local results exist.
     degraded = False
     degradation_note: Optional[str] = None
-    if live_ran and live_errors and len(engine_results) > len(live_errors):
+    live_succeeded = any(res.available for k, res in engine_results.items() if k in live_keys)
+    if live_ran and live_errors and not live_succeeded and len(engine_results) > len(live_errors):
         local_ok = any(res.available for k, res in engine_results.items() if k not in live_keys)
         if local_ok:
             degraded = True
@@ -340,9 +354,19 @@ def analyze_text(
 
 def _analyze_sentences(sentences: List[str], engine_results: Dict[str, EngineResult]) -> List[SentenceAnalysis]:
     """Sentence-level risk classification using cloud flags + lexical tells."""
-    zerogpt_flagged = set(engine_results["zerogpt"].flagged_sentences) if "zerogpt" in engine_results else set()
-    sapling_flagged = set(engine_results["sapling"].flagged_sentences) if "sapling" in engine_results else set()
-    quillbot_flagged = set(engine_results["quillbot"].flagged_sentences) if "quillbot" in engine_results else set()
+    cloud_flag_sources = [
+        ("zerogpt", "ZeroGPT Cloud Flag", 40.0),
+        ("sapling", "Sapling Cloud Flag", 35.0),
+        ("quillbot", "QuillBot Highlight", 30.0),
+        ("gptzero-api", "GPTZero Cloud Flag", 40.0),
+        ("winston", "Winston AI Cloud Flag", 35.0),
+        ("pangram", "Pangram Cloud Flag", 40.0),
+    ]
+    flagged_sets = []
+    for src_key, src_reason, src_bonus in cloud_flag_sources:
+        result = engine_results.get(src_key)
+        if result is not None and result.flagged_sentences:
+            flagged_sets.append((set(result.flagged_sentences), src_reason, src_bonus))
 
     def _match(flagged_texts, sentence):
         if sentence in flagged_texts:
@@ -358,15 +382,10 @@ def _analyze_sentences(sentences: List[str], engine_results: Dict[str, EngineRes
         reasons: List[str] = []
         s_ai_prob = 5.0
 
-        if _match(zerogpt_flagged, s):
-            reasons.append("ZeroGPT Cloud Flag")
-            s_ai_prob += 40.0
-        if _match(sapling_flagged, s):
-            reasons.append("Sapling Cloud Flag")
-            s_ai_prob += 35.0
-        if _match(quillbot_flagged, s):
-            reasons.append("QuillBot Highlight")
-            s_ai_prob += 30.0
+        for flagged_texts, reason, bonus in flagged_sets:
+            if _match(flagged_texts, s):
+                reasons.append(reason)
+                s_ai_prob += bonus
 
         s_banned = [w for w in s_words if w in BANNED_WORDS]
         if s_banned:
@@ -497,15 +516,26 @@ def run_batch(
 def list_engines() -> str:
     lines = ["=" * 82, " 🔧 REGISTERED DETECTION ENGINES", "=" * 82]
     groups = [
-        ("Live HTTP Cloud Engines (fast, default)", LIVE_HTTP_ENGINES),
-        ("Local Statistical Engines (instant, offline)", LOCAL_ENGINES),
-        ("Stealth Browser Engines (--browser / --all)", BROWSER_ENGINES),
+        ("Live HTTP Cloud Engines (fast, default)", LIVE_HTTP_ENGINES, False),
+        ("Local Statistical Engines (instant, offline)", LOCAL_ENGINES, False),
+        ("Premium Key-Based API Engines (auto-activate when key is set)", PREMIUM_KEY_ENGINES, True),
+        ("Stealth Browser Engines (--browser / --all)", BROWSER_ENGINES, False),
     ]
-    for title, engines in groups:
+    for title, engines, show_state in groups:
         lines.append(f"\n {title}:")
         for e in engines:
-            lines.append(f"   • {e.name:<34} weight={e.weight:.2f}  key={engine_key(e)}")
-    lines.append("\n Select with: --engines zerogpt,sapling,gltr  |  --local-only | --live-only | --browser | --all")
+            if show_state:
+                state = "ACTIVE " if e.is_configured() else "inactive"
+                lines.append(f"   • {e.name:<34} weight={e.weight:.2f}  key={engine_key(e)}  [{state}]")
+            else:
+                lines.append(f"   • {e.name:<34} weight={e.weight:.2f}  key={engine_key(e)}")
+    binoculars_note = (
+        "   • Binoculars (Local Neural)            weight=0.50  key=binoculars  "
+        f"[{'ACTIVE ' if BINOCULARS_ACTIVE else 'inactive'}]"
+    )
+    lines.append("\n Local Neural Detector (academic-grade, opt-in):")
+    lines.append(binoculars_note)
+    lines.append("\n Select with: --engines zerogpt,sapling,pangram,binoculars  |  --local-only | --live-only | --browser | --all")
     lines.append("=" * 82)
     return "\n".join(lines)
 
@@ -517,15 +547,15 @@ def list_engines() -> str:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="ai-detect",
-        description="Multi-Format AI Text Detector CLI (13 engines: live cloud HTTP, stealth browser & local statistical models)"
+        description="Multi-Format AI Text Detector CLI (19 engines: live cloud HTTP, premium key-based APIs, local neural & statistical models, stealth browser automation)"
     )
     parser.add_argument("file", nargs="?", help="Path to text, markdown, docx, pdf, html, json, or csv document to audit")
     parser.add_argument("--compare", "-c", nargs=2, metavar=("ORIGINAL", "MODIFIED"), help="Compare original vs modified documents across all engines")
     parser.add_argument("--batch", "-b", metavar="DIR", help="Batch-scan every supported document in a directory and print a ranked summary")
     parser.add_argument("--recursive", "-r", action="store_true", help="With --batch: recurse into subdirectories")
     parser.add_argument("--glob", metavar="PATTERN", help="With --batch: only files matching this glob (e.g. '*.md')")
-    parser.add_argument("--live-only", action="store_true", help="Run only the live direct HTTP cloud detectors (ZeroGPT, Sapling)")
-    parser.add_argument("--local-only", action="store_true", help="Run only local statistical engines (GLTR, Burstiness, Perplexity, Lexicon) without network requests")
+    parser.add_argument("--live-only", action="store_true", help="Run only the live direct HTTP cloud detectors (ZeroGPT, Sapling + any configured premium APIs)")
+    parser.add_argument("--local-only", action="store_true", help="Run only local engines (GLTR, Burstiness, Perplexity, Lexicon + Binoculars when enabled) without cloud API requests")
     parser.add_argument("--browser", action="store_true", help="Include Playwright browser automation engines (QuillBot, Scribbr, Writer, ...)")
     parser.add_argument("--all", action="store_true", help="Run every single engine (HTTP + Browser + Local)")
     parser.add_argument("--engines", metavar="E1,E2", help="Comma-separated engine keys to run (see --list-engines)")

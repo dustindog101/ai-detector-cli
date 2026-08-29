@@ -36,7 +36,7 @@ _ai_detect() {
             ;;
         engine_keys)
             local -a engines
-            engines=(zerogpt sapling gltr burstiness perplexity lexicon gptzero copyleaks quillbot scribbr writer contentdetector isgen)
+            engines=(zerogpt sapling gltr burstiness perplexity lexicon gptzero copyleaks quillbot scribbr writer contentdetector isgen gptzero-api winston originality pangram detecting-ai binoculars)
             _values -s , $engines
             ;;
     esac

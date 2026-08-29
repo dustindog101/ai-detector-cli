@@ -10,7 +10,7 @@ complete -c ai-detect -l live-only -d 'Run only live HTTP cloud detectors'
 complete -c ai-detect -l local-only -d 'Run only local statistical engines'
 complete -c ai-detect -l browser -d 'Include browser automation engines'
 complete -c ai-detect -l all -d 'Run every engine'
-complete -c ai-detect -l engines -d 'Comma-separated engine keys' -r -a 'zerogpt sapling gltr burstiness perplexity lexicon gptzero copyleaks quillbot scribbr writer contentdetector isgen'
+complete -c ai-detect -l engines -d 'Comma-separated engine keys' -r -a 'zerogpt sapling gltr burstiness perplexity lexicon gptzero copyleaks quillbot scribbr writer contentdetector isgen gptzero-api winston originality pangram detecting-ai binoculars'
 complete -c ai-detect -l list-engines -d 'List registered engines'
 complete -c ai-detect -l workers -s w -d 'Max concurrent workers' -r
 complete -c ai-detect -l timeout -d 'Global HTTP timeout seconds' -r
