@@ -547,7 +547,7 @@ def list_engines() -> str:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="ai-detect",
-        description="Multi-Format AI Text Detector CLI (19 engines: live cloud HTTP, premium key-based APIs, local neural & statistical models, stealth browser automation)"
+        description="Multi-Format AI Text Detector CLI (20 engines: live cloud HTTP, premium key-based APIs, local neural & statistical models, stealth browser automation)"
     )
     parser.add_argument("file", nargs="?", help="Path to text, markdown, docx, pdf, html, json, or csv document to audit")
     parser.add_argument("--compare", "-c", nargs=2, metavar=("ORIGINAL", "MODIFIED"), help="Compare original vs modified documents across all engines")
@@ -564,8 +564,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timeout", type=float, default=None, metavar="SEC", help="Global HTTP timeout in seconds (default: 10, env AIDETECT_TIMEOUT)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Show full verbose diagnostic output and engine details")
     parser.add_argument("--json", action="store_true", help="Output results in JSON format (works for single, compare, and batch modes)")
-    parser.add_argument("--export", "-e", metavar="OUTPUT_PATH", help="Export report to .json, .md, or .html file")
+    parser.add_argument("--export", "-e", metavar="OUTPUT_PATH", help="Export report to .json, .md, .html, or .pdf file")
     parser.add_argument("--html", metavar="OUTPUT_PATH", help="Export an in-depth standalone HTML report (shortcut for --export <path>.html)")
+    parser.add_argument("--pdf", metavar="OUTPUT_PATH", help="Export an academic PDF audit report (requires 'pip install ai-detector-cli[pdf]')")
     parser.add_argument("--no-sentences", action="store_true", help="Hide detailed sentence-level extraction breakdown")
     parser.add_argument("--threshold", "-t", type=int, default=30, help="Maximum AI percentage allowed to exit with code 0 (default: 30)")
     parser.add_argument("--stdin", action="store_true", help="Read text directly from standard input")
@@ -585,11 +586,14 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
 
-    # --html PATH is a first-class shortcut for --export PATH (HTML report).
-    if getattr(args, "html", None):
+    # --html/--pdf PATH are first-class shortcuts for --export PATH.
+    shortcut = getattr(args, "html", None) or getattr(args, "pdf", None)
+    if shortcut:
         if args.export:
-            parser.error("--export and --html are mutually exclusive")
-        args.export = args.html
+            parser.error("--export cannot be combined with --html or --pdf")
+        if args.html and args.pdf:
+            parser.error("--html and --pdf are mutually exclusive")
+        args.export = shortcut
 
     if getattr(args, "timeout", None):
         from . import http_client
@@ -692,17 +696,30 @@ def _write_export(path: str, report: Optional[DetectionReport] = None, batch_rep
     lower = path.lower()
     if lower.endswith(".json"):
         content = export_json(report) if report is not None else export_batch_json(batch_report)  # type: ignore[arg-type]
-    elif lower.endswith(".html"):
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+        return
+    if lower.endswith(".html"):
         content = export_html(report) if report is not None else export_batch_html(batch_report)  # type: ignore[arg-type]
-    elif lower.endswith(".md") or lower.endswith(".markdown"):
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+        return
+    if lower.endswith(".pdf"):
+        from .pdf_report import export_pdf_bytes, export_batch_pdf_bytes
+        content = (export_pdf_bytes(report) if report is not None
+                   else export_batch_pdf_bytes(batch_report))  # type: ignore[arg-type]
+        with open(path, "wb") as f:
+            f.write(content)
+        return
+    if lower.endswith(".md") or lower.endswith(".markdown"):
         if report is not None:
             content = export_markdown(report)
         else:
-            raise ValueError("Batch markdown export is not supported; use .json or .html")
-    else:
-        raise ValueError("Unsupported export format. Use .json, .md, or .html")
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(content)
+            raise ValueError("Batch markdown export is not supported; use .json, .html, or .pdf")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+        return
+    raise ValueError("Unsupported export format. Use .json, .md, .html, or .pdf")
 
 
 if __name__ == "__main__":

@@ -3,7 +3,7 @@
 <img src="https://img.shields.io/badge/🛡️_ai--detect-19_engines-3b4fd8?style=for-the-badge&labelColor=24307a" alt="ai-detect" height="34"><br>
 
 **Multi-Engine AI Text Detector CLI**<br>
-*Run your text through 19 detection engines at once — get one weighted consensus, sentence-level evidence, and an in-depth HTML audit report.*
+*Run your text through 20 detection engines at once — get one weighted consensus, sentence-level evidence, and an in-depth HTML audit report.*
 
 [![CI](https://github.com/dustindog101/ai-detector-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dustindog101/ai-detector-cli/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/dustindog101/ai-detector-cli/actions/workflows/codeql.yml/badge.svg)](https://github.com/dustindog101/ai-detector-cli/actions/workflows/codeql.yml)
@@ -114,7 +114,8 @@ uvx ai-detector-cli --local-only notes.md
 ```bash
 ai-detect assignment.md                  # full audit (cloud + local, concurrent)
 ai-detect --local-only notes.md          # instant, offline, private
-ai-detect --html report.html paper.txt   # in-depth standalone HTML audit
+ai-detect --html report.html paper.txt   # academic HTML audit (self-contained)
+ai-detect --pdf report.pdf  paper.txt    # academic PDF audit ([pdf] extra)
 echo "text..." | ai-detect --json        # pipe stdin, machine-readable out
 ai-detect --batch ./essays/ -r           # rank every document in a folder
 ai-detect --compare draft.txt humanized.txt
@@ -148,8 +149,9 @@ usage: ai-detect [file] [-c ORIG MOD] [-b DIR] [flags]
   --timeout SEC          global HTTP timeout (default 10; env AIDETECT_TIMEOUT)
   --threshold, -t PCT    exit-code threshold (default 30)
   --json                 JSON output (single, compare, and batch modes)
-  --export, -e PATH      export .json / .md / .html report
+  --export, -e PATH      export .json / .md / .html / .pdf report
   --html PATH            shortcut: in-depth standalone HTML audit report
+  --pdf PATH             shortcut: academic PDF audit report ([pdf] extra)
   --no-sentences         hide sentence-level breakdown
   --verbose, -v          full engine diagnostics
   --stdin                read text from stdin
@@ -165,7 +167,7 @@ usage: ai-detect [file] [-c ORIG MOD] [-b DIR] [flags]
 | **Premium API** (auto when key set) | GPTZero Official, Pangram, Winston AI, Originality.ai, Detecting-AI | ~0.5–5 s | Yes |
 | **Local neural** (`--engines binoculars` / `AIDETECT_BINOCULARS=1`) | Binoculars (Falcon-7B pair, ICML 2024) | ~2–60 s first run | None* |
 | **Local statistical** (default) | GLTR token-rank, Burstiness σ/μ, Perplexity/entropy, PubMed AI-lexicon | < 5 ms each | None |
-| **Stealth browser** (`--browser`) | GPTZero, CopyLeaks, QuillBot, Scribbr, Writer, ContentDetector.ai, IsGen | 10–60 s | Yes |
+| **Stealth browser** (`--browser`) | GPTZero, CopyLeaks, QuillBot, Scribbr, Writer, ContentDetector.ai, IsGen, Grammarly | 10–60 s | Yes |
 
 \* first run downloads model weights; afterwards fully offline.
 
@@ -183,31 +185,41 @@ response schemas, quirks, key expiry notes — lives in
 | Default suite (2 cloud + 4 local, concurrent) | ~1.2 s (network-bound) |
 | Package import | ~30 ms |
 
-## 📊 In-Depth HTML Report
+## 📊 Academic HTML & PDF Reports
 
 ```bash
 ai-detect --html report.html paper.txt    # or: --export report.html
-ai-detect --batch ./essays/ --html batch.html
+ai-detect --pdf  report.pdf  paper.txt    # requires: pip install 'ai-detector-cli[pdf]'
+ai-detect --batch ./essays/ --html batch.html   # batch variants of both
 ```
 
-One **self-contained file** — zero external assets, zero JavaScript, works
-offline, prints cleanly, and auto-adapts to dark mode. Open it anywhere and
-share it as-is. What's inside:
+Both reports are styled as a formal **academic provenance audit** — serif
+typography, ruled masthead with a unique report ID, numbered sections
+(§1 Executive Summary … §10 Methodology), and a similarity-index score band
+reminiscent of institutional originality reports.
+
+The **HTML report** is one self-contained file — zero external assets, zero
+JavaScript, works offline, auto light/dark, prints cleanly. Sections:
 
 | Section | What you get |
 | :--- | :--- |
-| **Executive summary** | Consensus donut gauge, verdict badge, human/AI split bar, and a plain-English interpretation of the risk level |
-| **Risk scale** | The consensus score positioned on a 0–100 scale with color-coded risk zones |
-| **Engine matrix** | Every engine grouped by tier (cloud / premium / local / browser) with weights, score bars, and per-engine diagnostics in collapsible cards |
-| **Agreement analysis** | Max−min engine spread with a confidence label — know when engines disagree and the consensus is unstable |
-| **Stylometric signals** | Words, sentences, mean sentence length ± σ, burstiness σ/μ, em dashes, semicolons, tripartite lists |
-| **AI vocabulary tells** | Over-represented AI-lexicon phrases rendered as highlighted chips |
-| **Cadence & distribution** | Per-sentence length chart (flagged vs human) + sentence risk histogram |
-| **Sentence evidence** | Every sentence classified with its AI-risk % and the exact reasons it was flagged |
-| **Methodology** | How the weighted consensus is computed, how risk bands map to verdicts, and the honest limitations |
+| **Executive summary** | Consensus donut, verdict badge, human/AI split bar, plain-English interpretation |
+| **Risk scale** | Consensus position on a zoned 0–100 scale with marker |
+| **Engine matrix** | Every engine grouped by tier with weights, score bars, collapsible diagnostics |
+| **Agreement analysis** | Max−min engine spread with a concordance label |
+| **Stylometric signals** | Words, sentences, mean length ± σ, burstiness, punctuation tells |
+| **AI vocabulary markers** | Over-represented AI-lexicon phrases as highlighted chips |
+| **Cadence & distribution** | Per-sentence length chart + sentence risk histogram |
+| **Sentence evidence** | Every sentence classified with risk % and the exact reasons |
+| **Methodology** | Weighted-consensus computation, risk bands, honest limitations |
 
-Batch mode adds a score-distribution histogram and a ranked per-file table with
-above-threshold status chips.
+The **PDF report** (reportlab) mirrors the same academic structure — cover
+masthead, similarity band, engine results table, stylometric signals table,
+flagged-sentence findings, methodology — with page numbers and report identity
+in the footer. English text only (Type-1 fonts), no font files needed.
+
+Batch mode adds a score-distribution histogram (HTML) and ranked per-file
+tables with above-threshold disposition in both formats.
 
 ## 🤖 Automating with JSON
 
@@ -227,11 +239,12 @@ dashboards.
 
 **Shipped**
 
-- [x] 19-engine registry: live cloud, premium key APIs, stealth browser, local statistical
+- [x] 20-engine registry: live cloud, premium key APIs, stealth browser (incl. Grammarly), local statistical
 - [x] Local neural detector (Binoculars, v2.1)
 - [x] Weighted consensus + sentence-level explanations
 - [x] Batch mode, compare mode, JSON automation
-- [x] In-depth self-contained HTML audit report (v2.2)
+- [x] Academic HTML audit report (v2.2, restyled v2.3)
+- [x] Academic PDF audit report (v2.3, reportlab)
 
 **Next up**
 

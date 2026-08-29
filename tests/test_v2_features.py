@@ -197,27 +197,59 @@ class TestHTMLExport(unittest.TestCase):
     def test_in_depth_report_sections(self):
         report = analyze_text(_load("ai_sample.txt"), local_only=True, source="x.md")
         html = html_report.export_html(report)
-        # In-depth sections
+        # Academic presentation
+        self.assertIn("AI Provenance Audit", html)
+        self.assertIn("Report ID", html)
         self.assertIn("Executive Summary", html)
+        self.assertIn("§1", html)                          # numbered academic sections
+        self.assertIn("Methodology", html)
+        # In-depth sections
         self.assertIn("class=\"marker\"", html)            # risk-scale position marker
         self.assertIn("Local Statistical Engines", html)   # tier grouping
         self.assertIn("Max−Min Engine Spread", html)       # agreement analysis
         self.assertIn('class="hist"', html)                # risk histogram
         self.assertIn('class="cad"', html)                 # cadence chart
-        self.assertIn("How the consensus is computed", html)
-        self.assertIn("v2.2.0", html)                      # version chip
-        self.assertIn("UTC", html)                         # generated stamp
+        self.assertIn("How the consensus is computed".replace(
+            "How the consensus is computed", "Computation of the consensus"), html)
+        self.assertIn("v2.3.0", html)                      # version chip
+        self.assertIn("UTC", html)                         # issued stamp
         # Engine details are collapsible, not lost
         self.assertIn("<details", html)
-        self.assertIn("details ▾", html)
+        self.assertIn("append ▾", html)
 
     def test_batch_report_distribution_and_status(self):
         batch = run_batch(SAMPLES, threshold=30.0, local_only=True)
         html = html_report.export_batch_html(batch)
         self.assertIn('class="hist"', html)
         self.assertIn("Score Distribution", html)
-        self.assertIn("ABOVE THRESHOLD", html)
+        self.assertIn("Above threshold", html)
         self.assertIn("Per-File Results", html)
+
+    def test_pdf_report_academic_layout(self):
+        from ai_detector_cli import pdf_report
+        report = analyze_text(_load("ai_sample.txt"), local_only=True, source="x.md")
+        data = pdf_report.export_pdf_bytes(report)
+        self.assertTrue(data.startswith(b"%PDF"), "PDF magic missing")
+        self.assertGreater(len(data), 5000, "PDF suspiciously small")
+        # Readable metadata via pypdf (installed with the [pdf] extra)
+        try:
+            import io
+            from pypdf import PdfReader
+            reader = PdfReader(io.BytesIO(data))
+            text = "".join(page.extract_text() or "" for page in reader.pages)
+            self.assertIn("AI Text Detection Report", text)
+            self.assertIn("EXECUTIVE SUMMARY", text.upper())
+            self.assertIn("METHODOLOGY", text.upper())
+            self.assertIn("Report AIA-", text)
+        except ImportError:
+            self.skipTest("pypdf not installed")
+
+    def test_batch_pdf_report(self):
+        from ai_detector_cli import pdf_report
+        batch = run_batch(SAMPLES, threshold=30.0, local_only=True)
+        data = pdf_report.export_batch_pdf_bytes(batch)
+        self.assertTrue(data.startswith(b"%PDF"))
+        self.assertGreater(len(data), 3000)
 
     def test_html_flag_mutually_exclusive_with_export(self):
         from ai_detector_cli import cli as cli_mod

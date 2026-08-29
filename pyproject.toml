@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ai-detector-cli"
-version = "2.2.0"
+version = "2.3.0"
 description = "Multi-engine AI text detector CLI: live cloud APIs (ZeroGPT, Sapling), premium key-based APIs (GPTZero, Pangram, Winston, Originality.ai), local neural (Binoculars) & statistical models, stealth browser engines, batch scanning and HTML reports"
 readme = "README.md"
 license = { text = "MIT" }
@@ -38,7 +38,7 @@ dependencies = []
 
 [project.optional-dependencies]
 browser = ["patchright>=1.40"]
-pdf = ["pypdf>=3.0"]
+pdf = ["pypdf>=3.0", "reportlab>=4.0"]
 binoculars = ["torch>=2.0", "transformers>=4.40"]
 dev = ["ruff>=0.4", "build>=1.0"]
 

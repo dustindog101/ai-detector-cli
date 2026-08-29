@@ -27,6 +27,7 @@ from .scribbr_engine import ScribbrEngine
 from .writer_engine import WriterEngine
 from .contentdetector_engine import ContentDetectorEngine
 from .isgen_engine import IsGenEngine
+from .grammarly_engine import GrammarlyEngine
 from .gptzero_api_engine import GPTZeroApiEngine
 from .winston_engine import WinstonEngine
 from .originality_engine import OriginalityEngine
@@ -49,6 +50,7 @@ __all__ = [
     "WriterEngine",
     "ContentDetectorEngine",
     "IsGenEngine",
+    "GrammarlyEngine",
     "GPTZeroApiEngine",
     "WinstonEngine",
     "OriginalityEngine",
@@ -120,7 +122,8 @@ BROWSER_ENGINES = [
     ScribbrEngine(),
     WriterEngine(),
     ContentDetectorEngine(),
-    IsGenEngine()
+    IsGenEngine(),
+    GrammarlyEngine(),
 ]
 
 

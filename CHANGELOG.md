@@ -4,6 +4,31 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.3.0] - 2026-08-29
+
+### Added
+- **Grammarly AI Detector engine** (stealth browser tier): automates
+  grammarly.com/ai-detector, the free public checker ranked #1 by several
+  2026 comparisons, and extracts AI/human percentages from the rendered
+  result. Verified live on 2026-08-29 (AI sample -> 100% AI-generated,
+  human sample -> 99% human-generated). Registry grows to 20 engines.
+- **Academic PDF audit report** (`--pdf PATH`, or `--export report.pdf`):
+  reportlab-based formal provenance audit mirroring the HTML report -
+  ruled masthead with unique report ID, similarity-index band, numbered
+  sections, engine results table, stylometric signals, flagged-sentence
+  findings, methodology & limitations, page-numbered footer. The [pdf]
+  extra now installs pypdf + reportlab; PDF export exits with an install
+  hint when reportlab is missing.
+
+### Changed
+- HTML report redesigned to academic provenance-audit presentation: serif
+  typography, ruled masthead + formal metadata tables, report ID
+  (AIA-xxxxxxxxxx), numbered sections 1-10, similarity-index score band,
+  concordance wording for inter-engine agreement. Still a single
+  self-contained file with zero JS, auto light/dark, and print rules.
+- PDF export writes bytes (binary-safe); --html/--pdf are mutually
+  exclusive shortcuts for --export.
+
 ## [2.2.0] - 2026-08-29
 
 ### Added
