@@ -496,10 +496,7 @@ def export_batch_pdf_bytes(batch: BatchReport) -> bytes:
         from reportlab.lib import colors
         from reportlab.lib.colors import HexColor
     except ImportError as exc:
-        raise SystemExit(
-            "PDF export requires the 'reportlab' package. "
-            "Install it with: pip install 'ai-detector-cli[pdf]'"
-        ) from exc
+        raise PdfExportUnavailable(_PDF_REQUIREMENT_NOTE) from exc
 
     st = _build_styles()
     ok = [e for e in batch.entries if e.report]
