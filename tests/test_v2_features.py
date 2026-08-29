@@ -194,6 +194,42 @@ class TestHTMLExport(unittest.TestCase):
         # Colored bars exist for engine rows
         self.assertIn("bar-wrap", html)
 
+    def test_in_depth_report_sections(self):
+        report = analyze_text(_load("ai_sample.txt"), local_only=True, source="x.md")
+        html = html_report.export_html(report)
+        # In-depth sections
+        self.assertIn("Executive Summary", html)
+        self.assertIn("class=\"marker\"", html)            # risk-scale position marker
+        self.assertIn("Local Statistical Engines", html)   # tier grouping
+        self.assertIn("Max−Min Engine Spread", html)       # agreement analysis
+        self.assertIn('class="hist"', html)                # risk histogram
+        self.assertIn('class="cad"', html)                 # cadence chart
+        self.assertIn("How the consensus is computed", html)
+        self.assertIn("v2.2.0", html)                      # version chip
+        self.assertIn("UTC", html)                         # generated stamp
+        # Engine details are collapsible, not lost
+        self.assertIn("<details", html)
+        self.assertIn("details ▾", html)
+
+    def test_batch_report_distribution_and_status(self):
+        batch = run_batch(SAMPLES, threshold=30.0, local_only=True)
+        html = html_report.export_batch_html(batch)
+        self.assertIn('class="hist"', html)
+        self.assertIn("Score Distribution", html)
+        self.assertIn("ABOVE THRESHOLD", html)
+        self.assertIn("Per-File Results", html)
+
+    def test_html_flag_mutually_exclusive_with_export(self):
+        from ai_detector_cli import cli as cli_mod
+        from ai_detector_cli.cli import build_parser
+        parser = build_parser()
+        args = parser.parse_args(["--html", "r.html", "file.md"])
+        self.assertEqual(args.html, "r.html")
+        # The conflict is enforced in main(), immediately after parsing.
+        with self.assertRaises(SystemExit) as ctx:
+            cli_mod.main(["--html", "r.html", "--export", "o.json", "file.md"])
+        self.assertEqual(ctx.exception.code, 2)
+
 
 class TestHTTPClient(unittest.TestCase):
     def test_configure_timeout_env(self):

@@ -15,6 +15,10 @@ name: AI Code Review
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  # Intentionally PR-only: the review's automatic output is a PR comment, and
+  # that is the only surface it can post to without extra approvals. Branch /
+  # push events are deliberately NOT reviewed — when the workflow cannot post
+  # its result automatically, it does not run at all (no noisy no-op runs).
 
 permissions:
   contents: read # read repo + PR diff

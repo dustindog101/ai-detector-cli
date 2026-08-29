@@ -565,6 +565,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--verbose", "-v", action="store_true", help="Show full verbose diagnostic output and engine details")
     parser.add_argument("--json", action="store_true", help="Output results in JSON format (works for single, compare, and batch modes)")
     parser.add_argument("--export", "-e", metavar="OUTPUT_PATH", help="Export report to .json, .md, or .html file")
+    parser.add_argument("--html", metavar="OUTPUT_PATH", help="Export an in-depth standalone HTML report (shortcut for --export <path>.html)")
     parser.add_argument("--no-sentences", action="store_true", help="Hide detailed sentence-level extraction breakdown")
     parser.add_argument("--threshold", "-t", type=int, default=30, help="Maximum AI percentage allowed to exit with code 0 (default: 30)")
     parser.add_argument("--stdin", action="store_true", help="Read text directly from standard input")
@@ -583,6 +584,12 @@ DEMO_TEXT = (
 def main(argv: Optional[List[str]] = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    # --html PATH is a first-class shortcut for --export PATH (HTML report).
+    if getattr(args, "html", None):
+        if args.export:
+            parser.error("--export and --html are mutually exclusive")
+        args.export = args.html
 
     if getattr(args, "timeout", None):
         from . import http_client

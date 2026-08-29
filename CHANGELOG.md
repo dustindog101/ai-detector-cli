@@ -4,6 +4,28 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] - 2026-08-29
+
+### Added
+- **In-depth self-contained HTML audit report** (`--html PATH`, or the
+  existing `--export report.html`). Zero external assets, zero JavaScript;
+  auto light/dark theme and clean printing. New sections: executive summary
+  with plain-English risk interpretation, consensus position on a zoned 0-100
+  risk scale, engine matrix grouped by tier with per-engine diagnostics in
+  collapsible cards, inter-engine agreement analysis (max-min spread with
+  confidence label), stylometric signal grid, AI-vocabulary tell chips,
+  sentence cadence chart, sentence risk histogram, and a methodology &
+  limitations section. Batch HTML gains a score-distribution histogram and a
+  ranked per-file table with above-threshold status chips.
+- `--html PATH` CLI shortcut (mutually exclusive with `--export`); wired for
+  single, batch, and compare flows.
+
+### Changed
+- README redesigned: centered hero with badges, feature table, HTML report
+  section, and an expanded shipped/next/exploring roadmap.
+- AI PR review workflow documented as intentionally PR-only: review comments
+  are the only automatic posting surface, so branch pushes are not reviewed.
+
 ## [2.1.0] - 2026-08-29
 
 ### Added
