@@ -226,7 +226,10 @@ class TestHTMLExport(unittest.TestCase):
         self.assertIn("Per-File Results", html)
 
     def test_pdf_report_academic_layout(self):
-        from ai_detector_cli import pdf_report
+        try:
+            from ai_detector_cli import pdf_report
+        except SystemExit:
+            self.skipTest("reportlab not installed (install the [pdf] extra)")
         report = analyze_text(_load("ai_sample.txt"), local_only=True, source="x.md")
         data = pdf_report.export_pdf_bytes(report)
         self.assertTrue(data.startswith(b"%PDF"), "PDF magic missing")
@@ -245,7 +248,10 @@ class TestHTMLExport(unittest.TestCase):
             self.skipTest("pypdf not installed")
 
     def test_batch_pdf_report(self):
-        from ai_detector_cli import pdf_report
+        try:
+            from ai_detector_cli import pdf_report
+        except SystemExit:
+            self.skipTest("reportlab not installed (install the [pdf] extra)")
         batch = run_batch(SAMPLES, threshold=30.0, local_only=True)
         data = pdf_report.export_batch_pdf_bytes(batch)
         self.assertTrue(data.startswith(b"%PDF"))
