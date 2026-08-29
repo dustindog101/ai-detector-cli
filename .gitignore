@@ -21,3 +21,4 @@ Thumbs.db
 *.report.html
 audit_report.*
 aidetect-env/
+.coverage

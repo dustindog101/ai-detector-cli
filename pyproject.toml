@@ -61,3 +61,8 @@ target-version = "py38"
 [tool.ruff.lint]
 select = ["E", "F", "W"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests and dev scripts intentionally insert sys.path entries before imports.
+"tests/*" = ["E402"]
+"scripts/*" = ["E402"]

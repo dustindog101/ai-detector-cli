@@ -6,7 +6,6 @@ Runs both engines with sample AI and Human text.
 
 import sys
 import os
-import json
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 pkg_dir = os.path.abspath(os.path.join(current_dir, ".."))
@@ -40,6 +39,11 @@ def main():
     if qb_res_ai.error:
         print(f"Error: {qb_res_ai.error}")
 
+    qb_res_human = qb.analyze(sample_human_text)
+    print(f"QuillBot Human Text Result: Available={qb_res_human.available}, AI%={qb_res_human.ai_percentage}%, Verdict={qb_res_human.verdict}")
+    if qb_res_human.error:
+        print(f"Error: {qb_res_human.error}")
+
     print("\n" + "=" * 70)
     print("Testing Scribbr Playwright Engine...")
     print("=" * 70)
@@ -49,6 +53,11 @@ def main():
     print(f"Details: {sc_res_ai.details}")
     if sc_res_ai.error:
         print(f"Error: {sc_res_ai.error}")
+
+    sc_res_human = sc.analyze(sample_human_text)
+    print(f"Scribbr Human Text Result: Available={sc_res_human.available}, AI%={sc_res_human.ai_percentage}%, Verdict={sc_res_human.verdict}")
+    if sc_res_human.error:
+        print(f"Error: {sc_res_human.error}")
 
 if __name__ == "__main__":
     main()

@@ -4,7 +4,6 @@ neural engine, and the v2.1 registry/selection wiring. All network access is
 mocked so the suite runs in CI without keys.
 """
 
-import json
 import os
 import unittest
 from unittest import mock
@@ -15,7 +14,6 @@ from ai_detector_cli.engines import (
     ALL_ENGINES,
     LIVE_HTTP_ENGINES,
     LOCAL_ENGINES,
-    PREMIUM_KEY_ENGINES,
     BINOCULARS_ACTIVE,
 )
 from ai_detector_cli.engines.gptzero_api_engine import GPTZeroApiEngine
@@ -57,7 +55,6 @@ class TestRegistryWiring(unittest.TestCase):
             for var in ("GPTZERO_API_KEY", "WINSTON_API_KEY", "ORIGINALITY_API_KEY",
                         "PANGRAM_API_KEY", "DETECTING_AI_API_KEY"):
                 os.environ.pop(var, None)
-            from ai_detector_cli.engines import CORE_HTTP_ENGINES
             live_keys = {engine_key(e) for e in LIVE_HTTP_ENGINES}
             for k in ("gptzero-api", "winston", "pangram"):
                 self.assertNotIn(k, live_keys)

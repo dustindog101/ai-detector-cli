@@ -1,0 +1,64 @@
+name: Security Audit (pip-audit)
+
+on:
+  schedule:
+    - cron: "41 7 * * 3" # Wednesdays 07:41 UTC — weekly dependency audit
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: pip-audit dependency scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pip-audit
+        run: |
+          python -m pip install --upgrade pip
+          pip install pip-audit
+
+      - name: Audit project + declared dependencies (report-only)
+        # `pip-audit .` builds the project from pyproject.toml in an isolated
+        # environment and audits the package itself plus its dependencies.
+        # Report-only: a weekly audit must not spam red X on scheduled runs.
+        continue-on-error: true
+        run: |
+          pip-audit --desc on . 2>&1 | tee audit-report.txt
+
+      - name: Write report to job summary
+        if: always()
+        run: |
+          {
+            echo "## 🔒 pip-audit — weekly dependency vulnerability report"
+            echo ""
+            echo "Audited: \`ai-detector-cli\` and its declared dependencies (\`pyproject.toml\`)."
+            echo "This is a report-only audit — it never fails the build. Vuln IDs link to osv.dev."
+            echo ""
+            echo '```'
+            cat audit-report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload audit report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pip-audit-report
+          path: audit-report.txt
+          retention-days: 30
+          if-no-files-found: ignore

@@ -13,10 +13,8 @@ if parent_dir not in sys.path:
 
 from ai_detector_cli.cli import analyze_text
 from ai_detector_cli.engines import (
-    ZeroGPTEngine,
     GLTREngine,
     BurstinessEngine,
-    PerplexityEngine,
     LexiconEngine,
     QuillBotEngine,
     ScribbrEngine,

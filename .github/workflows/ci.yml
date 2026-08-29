@@ -72,7 +72,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install ruff
-      - run: ruff check ai_detector_cli/
+      - name: Lint entire repository (package, tests, scripts)
+        run: ruff check .
 
   build:
     name: Build distribution

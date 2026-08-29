@@ -1,0 +1,78 @@
+name: Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    name: Test coverage (Python 3.12)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package + test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e . pytest pytest-cov
+
+      - name: Run offline test suite with coverage
+        env:
+          AIDETECT_OFFLINE: "1" # matches ci.yml — keep the suite hermetic
+        run: |
+          pytest tests/ --cov=ai_detector_cli --cov-report=term-missing:skip-covered --cov-report=xml
+
+      - name: Write coverage summary
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os
+          import xml.etree.ElementTree as ET
+
+          path = "coverage.xml"
+          if not os.path.exists(path):
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+                  f.write("## 📊 Test coverage\n\ncoverage.xml not produced (tests failed before reporting).\n")
+              raise SystemExit(0)
+
+          root = ET.parse(path).getroot()
+          line_rate = float(root.get("line-rate", "0")) * 100
+          branch_rate = float(root.get("branch-rate", "0")) * 100
+          lines_valid = root.get("lines-valid", "?")
+          lines_covered = root.get("lines-covered", "?")
+
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
+              f.write("## 📊 Test coverage\n\n")
+              f.write("| Metric | Value |\n")
+              f.write("|---|---|\n")
+              f.write(f"| Lines covered | {lines_covered} / {lines_valid} |\n")
+              f.write(f"| Line coverage | **{line_rate:.1f}%** |\n")
+              f.write(f"| Branch coverage | {branch_rate:.1f}% |\n")
+              f.write("\nFull per-file report in `coverage.xml` (artifact, kept 30 days).\n")
+          PY
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          retention-days: 30
+          if-no-files-found: ignore

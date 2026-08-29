@@ -24,7 +24,7 @@ from ai_detector_cli.cli import (
     engine_key,
     discover_batch_files,
 )
-from ai_detector_cli.models import DetectionReport, EngineResult, BatchEntry, BatchReport
+from ai_detector_cli.models import EngineResult
 from ai_detector_cli.engines import LIVE_HTTP_ENGINES, LOCAL_ENGINES, DEFAULT_ENGINES
 from ai_detector_cli import html_report
 from ai_detector_cli.reporter import format_batch_report, export_batch_json
