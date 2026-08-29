@@ -1,211 +1,179 @@
-# Multi-Engine AI Text Detector CLI Suite (`ai-detect`)
+# 🛡️ ai-detect — Multi-Engine AI Text Detector CLI
 
-**Date:** 2026-08-28  
-**Repository:** `/Users/king/Downloads/research/2026-08-28-ai-detector-cli`  
-**Binary:** [`bin/ai-detect`](file:///Users/king/Downloads/research/2026-08-28-ai-detector-cli/bin/ai-detect)  
+[![CI](https://github.com/dustindog101/ai-detector-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dustindog101/ai-detector-cli/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/ai-detector-cli)](https://pypi.org/project/ai-detector-cli/)
+[![Python](https://img.shields.io/pypi/pyversions/ai-detector-cli)](https://pypi.org/project/ai-detector-cli/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
----
-
-## 1. Executive Summary
-
-`ai-detect` is an open-source, multi-engine AI text detection and stylometric auditing CLI tool. It evaluates submitted text across **5 distinct statistical and deep-learning engines** simultaneously, providing:
-1. **Consensus AI Probability Score (0%–100%)** and overall risk classification.
-2. **Individual Engine Breakdown** across live cloud APIs and local stylometric models.
-3. **Sentence-by-Sentence Extraction & Classification**, pinpointing the exact sentences, buzzwords, and structural patterns triggering detector alerts.
-4. **Interactive Sentence Cadence & Burstiness Visualization**, displaying the rhythmic dispersion ($\sigma/\mu$) of sentence lengths.
-5. **Comparative Before/After Auditing (`--compare`)**, verifying whether humanization / de-linearization dropped detection probability to 0%.
-
-The tool requires **zero third-party dependencies** (runs on Python standard library), executes in under 500ms, and supports stdin piping, markdown exports, and JSON automation.
-
----
-
-## 2. Architecture & The 5 Detection Engines
+**Audit text against 13 detection engines simultaneously** — live cloud APIs
+(ZeroGPT, Sapling), stealth-browser detectors (GPTZero, QuillBot, Scribbr,
+Writer, CopyLeaks, and more), and instant local statistical models (GLTR,
+burstiness, perplexity, AI-lexicon tells) — and get one weighted consensus
+score with sentence-level explanations.
 
 ```
-[ Input Text Submission / Stdin / File ]
-                  │
-                  ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                        ai-detect Orchestrator                          │
-├────────────────────────────────────────────────────────────────────────┤
-│ 1. ZeroGPT Live Cloud API (Live HTTP Post, Sentence Matching, AI %)    │
-│ 2. GLTR Rank & Token Distribution (Zipf Top-100 vs. Long-Tail Rare)    │
-│ 3. Burstiness & Cadence Model (Sentence Length Variance σ / μ)         │
-│ 4. Perplexity & Predictability Model (Vocabulary Entropy & Contractions│
-│ 5. PubMed/arXiv AI Lexicon (Banned Buzzwords, Em Dashes, Triplets)     │
-└────────────────────────────────────────────────────────────────────────┘
-                  │
-                  ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│               Consensus Engine & Sentence-Level Extractor              │
-├────────────────────────────────────────────────────────────────────────┤
-│ • Weighted Consensus Calculation                                       │
-│ • Sentence-by-Sentence AI Risk Classification                          │
-│ • ASCII Rhythm Dispersion Visualizer                                   │
-│ • Terminal Table / JSON / Markdown Export                              │
-└────────────────────────────────────────────────────────────────────────┘
-```
-
-### Engine Specifications:
-| Engine | Type | Weight | Primary Signals Analyzed |
-| :--- | :--- | :--- | :--- |
-| **1. ZeroGPT Live Cloud API** | Remote Deep-Learning API | 35% | Real-time neural classifier probabilities and sentence-level highlights. |
-| **2. Sapling AI Content Detector** | Playwright Browser & REST API | 30% | Headless Chrome automation (`sapling.ai/ai-content-detector`) and `/api/v1/aidetect` endpoint. |
-| **3. ContentDetector.ai Engine** | Playwright Headless Browser | 25% | Real-time browser automation on `contentdetector.ai` extracting estimated AI % and highlights. |
-| **4. Writer.com AI Detector** | Playwright Headless Browser | 20% | Headless browser automation on `writer.com/ai-content-detector/` analyzing human-score ratios. |
-| **5. QuillBot Playwright Engine** | Headless Browser Automation | 35% | Live browser automation on `quillbot.com/ai-content-detector` extracting AI %, highlights, and stats. |
-| **6. Scribbr Playwright Engine** | Headless Browser Automation | 35% | Live browser automation on `scribbr.com/ai-detector` extracting AI %, verdict, and highlights. |
-| **7. GLTR Rank & Token Distribution** | Statistical Token Rank | 15% | Percentage of high-probability Top-100 words vs. creative long-tail tokens. |
-| **8. Burstiness & Cadence Model** | Syntactic Variance | 20% | Sentence length dispersion ratio ($\sigma/\mu$). Flags uniform cadence ($< 0.35$). |
-| **9. Perplexity & Predictability** | Cross-Entropy & Entropy | 15% | Vocabulary entropy score and formal vs. informal contraction ratios. |
-| **10. PubMed AI Lexicon & Tells** | Heuristic & Blacklist | 15% | Banned AI verbs (*delve, underscore*), nouns (*tapestry, testament*), em dashes, and triplets. |
-
-
----
-
-## 3. Installation & Quick Start
-
-### Direct Execution:
-You can run the standalone binary directly without installing:
-```bash
-/Users/king/Downloads/research/2026-08-28-ai-detector-cli/bin/ai-detect <file.txt>
-```
-
-### Add to Shell PATH (Optional):
-```bash
-export PATH="/Users/king/Downloads/research/2026-08-28-ai-detector-cli/bin:$PATH"
-ai-detect --help
-```
-
-### Python Package Installation (Editable Mode):
-```bash
-cd /Users/king/Downloads/research/2026-08-28-ai-detector-cli
-pip install -e .
-```
-
----
-
-## 4. CLI Manual & Options
-
-```text
-usage: ai-detect [-h] [--compare ORIGINAL MODIFIED] [--json] [--export OUTPUT_PATH] [--no-sentences] [--threshold THRESHOLD] [--stdin] [file]
-
-Multi-Engine AI Text Detector CLI (Audits text across ZeroGPT, GLTR, Burstiness, Perplexity & Lexicon engines)
-
-positional arguments:
-  file                  Path to text or markdown file to audit
-
-options:
-  -h, --help            Show this help message and exit
-  --compare, -c ORIGINAL MODIFIED
-                        Compare original vs modified text files across all engines
-  --json                Output results in JSON format
-  --export, -e OUTPUT_PATH
-                        Export full report to a Markdown (.md) or JSON (.json) file
-  --no-sentences        Hide detailed sentence-level extraction breakdown
-  --threshold, -t THRESHOLD
-                        Maximum AI percentage allowed to exit with code 0 (default: 30)
-  --stdin               Read text directly from standard input
-```
-
----
-
-## 5. Usage Examples
-
-### 1. Audit a Single File:
-```bash
-ai-detect assignment.md
-```
-**Sample Output:**
-```text
-==============================================================================
  🛡️  MULTI-ENGINE AI TEXT DETECTION CONSENSUS AUDIT
-==============================================================================
- 📊 CONSENSUS SCORE:    74.6% AI Probability (25.4% Human)
+==================================================================================
+ 📊 CONSENSUS SCORE:    81.2% AI Probability (18.8% Human)
  🚦 OVERALL VERDICT:    🔴 HIGH AI DETECTION RISK (Will Trip Turnitin/GPTZero)
- ⚠️  RISK ASSESSMENT:   CRITICAL (De-linearization Required)
-------------------------------------------------------------------------------
- ENGINE / DETECTOR                  | AI %     | VERDICT    | KEY SIGNAL / FEEDBACK
-------------------------------------------------------------------------------
- ZeroGPT Live Cloud API             | 100.0% | AI         | Your Text contains m
- GLTR Rank & Token Distribution     |   5.0% | HUMAN      | 62.0% rare words  
- Burstiness & Cadence Model         |  90.0% | AI         | Ratio: 0.17       
- Perplexity & Predictability Model  |  40.0% | MIXED      | Entropy: 5.52     
- PubMed AI Lexicon & Tells          |  99.0% | AI         | 8 buzzwords       
-------------------------------------------------------------------------------
- 📈 SENTENCE CADENCE & BURSTINESS RHYTHM CHART:
-    S01 (16w): |██████████████████████████| 🚩 [AI]
-    S02 (10w): |████████████████          | 🚩 [AI]
-    S03 (12w): |███████████████████       | 🚩 [AI]
-    S04 (12w): |███████████████████       | 🚩 [AI]
-------------------------------------------------------------------------------
- 📝 SENTENCE-LEVEL EXTRACTION & CLASSIFICATION:
-
-  [Sentence 1] (16 words | 🔴 FLAGGED AS AI - 99% AI Risk)
-  "When evaluating relational databases versus NoSQL solutions, it is crucial to delve into the multifaceted trade-offs."
-  ↳ Reasons: ZeroGPT Cloud Flag, AI buzzwords: crucial, multifaceted, delve, Formulaic AI phrase/transition
-
-  [Sentence 2] (10 words | 🔴 FLAGGED AS AI - 99% AI Risk)
-  "Furthermore, scalability plays a pivotal role in modern software architecture."
-  ↳ Reasons: ZeroGPT Cloud Flag, AI buzzwords: pivotal, Formulaic AI phrase/transition
-------------------------------------------------------------------------------
- ❌ HIGH-RISK AI BUZZWORDS FOUND: crucial, nuances, multifaceted, bolster, fostering, pivotal, delve, paramount
-==============================================================================
+----------------------------------------------------------------------------------
+ Sapling AI Detector                | 100.0% | AI    | 4 flagged sentences
+ ZeroGPT Live Cloud API             | 100.0% | AI    | Your Text contains mix
+ Burstiness & Cadence Model         |  90.0% | AI    | Ratio: 0.17
+ PubMed AI Lexicon & Tells          |  99.0% | AI    | 8 buzzwords found
+ GLTR Rank & Token Distribution     |   5.0% | HUMAN | 62.0% rare tokens
+----------------------------------------------------------------------------------
+ 📝 [Sentence 1] 🔴 FLAGGED — "When evaluating relational databases versus
+     NoSQL solutions, it is crucial to delve into the multifaceted trade-offs."
+     ↳ ZeroGPT Cloud Flag, Sapling Cloud Flag, AI buzzwords: crucial, delve
 ```
 
-### 2. Compare Unmodified vs. Humanized Drafts:
+## Why ai-detect
+
+- **Consensus, not vibes.** One weighted score across independent engines,
+  each with tunable trust weights.
+- **Explainable.** Every flagged sentence lists *why* it tripped — cloud
+  flags, AI buzzwords, formulaic transitions, em dashes, tripartite lists.
+- **Auto-adaptive.** Cloud + local engines run concurrently; if you're
+  offline it automatically degrades to local-only mode with a warning instead
+  of crashing.
+- **Fast.** Default suite finishes in ~1 s (network-bound); local-only mode
+  runs in **< 10 ms**. Keep-alive connection pooling, retries with backoff,
+  and parallel engine workers keep it snappy.
+- **Zero required dependencies.** Core runs on the Python standard library
+  (3.8+). Browser engines and PDF support are optional extras.
+- **Private local mode.** `--local-only` never sends your text anywhere.
+
+## Install
+
+### One-line install script (recommended)
+
 ```bash
+curl -fsSL https://raw.githubusercontent.com/dustindog101/ai-detector-cli/main/install.sh | sh
+```
+
+The script installs an isolated venv under `~/.local/share/ai-detector-cli`,
+symlinks `ai-detect` into `~/.local/bin`, and sets up **bash/zsh/fish shell
+completions**. Re-run it any time to update. Uninstall with
+`sh uninstall.sh`.
+
+Flags: `--prefix DIR` · `--ref REF` · `--repo URL` · `--no-completions`
+
+### pip
+
+```bash
+pip install ai-detector-cli
+# optional extras:
+pip install "ai-detector-cli[browser]"   # stealth browser engines (patchright)
+pip install "ai-detector-cli[pdf]"       # full .pdf text extraction (pypdf)
+```
+
+### pipx / uv (one-shot)
+
+```bash
+pipx install ai-detector-cli
+uvx ai-detector-cli --local-only notes.md
+```
+
+## Quick Start
+
+```bash
+ai-detect assignment.md                  # full audit (cloud + local, concurrent)
+ai-detect --local-only notes.md          # instant, offline, private
+echo "text..." | ai-detect --json        # pipe stdin, machine-readable out
+ai-detect --batch ./essays/ -r           # rank every document in a folder
 ai-detect --compare draft.txt humanized.txt
+ai-detect --export report.html paper.txt # self-contained HTML report
+ai-detect --list-engines                 # inspect the engine registry
 ```
-**Output:**
+
+Exit code is `1` when the consensus score exceeds `--threshold` (default 30),
+so you can drop it straight into CI:
+
+```yaml
+# GitHub Actions example: fail PRs that look > 50% AI
+- run: ai-detect --local-only --threshold 50 $(git diff --name-only HEAD~1 | grep -E '\.(md|txt)$')
+```
+
+## All Options
+
 ```text
-==============================================================================
- 🔄 MULTI-DETECTOR COMPARATIVE AUDIT (BEFORE vs. AFTER)
-==============================================================================
- METRIC / DETECTOR                  | ORIGINAL (UNMODIFIED) | MODIFIED (HUMANIZED)
-------------------------------------------------------------------------------
- Consensus AI Probability           |             74.6% |              3.2%
- ZeroGPT Live Cloud API             |            100.0% |              0.0%
- GLTR Rank & Token Distribution     |              5.0% |              5.0%
- Burstiness & Cadence Model         |             90.0% |              5.0%
- Perplexity & Predictability Model  |             40.0% |             10.0%
- PubMed AI Lexicon & Tells          |             99.0% |              0.0%
- Burstiness Ratio (σ/μ)             |              0.17 |              0.64
- Banned AI Buzzwords                |                 8 |                 0
- Em Dashes (—)                      |                 0 |                 0
-==============================================================================
- 🎉 AI RISK REDUCTION: 71.4% drop in AI detection probability
- ✅ VERDICT: 100% READY FOR SUBMISSION (0% AI DETECTION RISK)
+usage: ai-detect [file] [-c ORIG MOD] [-b DIR] [flags]
+
+  --batch, -b DIR        batch-scan a directory; prints a ranked table
+  --recursive, -r        recurse into subdirectories (with --batch)
+  --glob PATTERN         filter batch files, e.g. '*.md'
+  --compare, -c A B      before/after comparative audit
+  --engines E1,E2        run only these engines (keys from --list-engines)
+  --live-only            only ZeroGPT + Sapling cloud APIs
+  --local-only           only local statistical engines (offline, private)
+  --browser              add stealth browser engines (needs patchright)
+  --all                  every engine (HTTP + browser + local)
+  --workers, -w N        concurrent engine workers (default 6)
+  --timeout SEC          global HTTP timeout (default 10; env AIDETECT_TIMEOUT)
+  --threshold, -t PCT    exit-code threshold (default 30)
+  --json                 JSON output (single, compare, and batch modes)
+  --export, -e PATH      export .json / .md / .html report
+  --no-sentences         hide sentence-level breakdown
+  --verbose, -v          full engine diagnostics
+  --stdin                read text from stdin
 ```
 
-### 3. Piping Stdin & JSON Output:
+## The Engines
+
+| Tier | Engines | Speed | Network |
+| :--- | :--- | :--- | :--- |
+| **Live HTTP** (default) | ZeroGPT, Sapling | ~0.3–1 s | Yes |
+| **Local statistical** (default) | GLTR token-rank, Burstiness σ/μ, Perplexity/entropy, PubMed AI-lexicon | < 5 ms each | None |
+| **Stealth browser** (`--browser`) | GPTZero, CopyLeaks, QuillBot, Scribbr, Writer, ContentDetector.ai, IsGen | 10–60 s | Yes |
+
+Full endpoint reference — payloads, limits, response schemas, quirks, key
+expiry notes — lives in [`docs/ENGINES.md`](docs/ENGINES.md). The consensus is
+a weighted average of available engines; unavailable engines simply drop out
+of the denominator.
+
+### Benchmarks (local-only tier, 3.12 on Linux)
+
+| Operation | Time |
+| :--- | :--- |
+| Single document, 4 local engines | **~3 ms** |
+| Batch scan, 4 documents | **~6 ms** |
+| Default suite (2 cloud + 4 local, concurrent) | ~1.2 s (network-bound) |
+| Package import | ~30 ms |
+
+## Automating with JSON
+
 ```bash
-echo "Honestly I dont think MongoDB makes sense here." | ai-detect --json
+$ ai-detect --local-only --json notes.md | jq '.consensus_ai_probability, .degraded'
+5.0
+false
 ```
 
-### 4. Export Markdown Audit Report:
-```bash
-ai-detect --export audit_report.md discussion_post.txt
-```
+Every report includes `consensus_ai_probability`, `risk_level`, per-engine
+`details`, `sentences[]` with `flagged` + `reasons`, burstiness metrics, and
+v2 fields (`source`, `engine_mode`, `degraded`, `analysis_ms`). Batch JSON
+adds a `summary` block with `files_above_threshold` — ideal for agents and
+dashboards.
 
----
+## Roadmap / Ideas
 
-## 6. Repository Layout
+- [ ] Optional local transformer baseline (ONNX) as a 5th tier
+- [ ] SARIF output for code-review integration
+- [ ] `--watch` mode for live re-scanning while writing
+- [ ] Pluggable custom engines via entry points
 
-- **[`ai_detector_cli/`](file:///Users/king/Downloads/research/2026-08-28-ai-detector-cli/ai_detector_cli):** Core Python package.
-  - **[`cli.py`](file:///Users/king/Downloads/research/2026-08-28-ai-detector-cli/ai_detector_cli/cli.py):** Main CLI argument parser, orchestrator, and exit-code evaluator.
-  - **[`models.py`](file:///Users/king/Downloads/research/2026-08-28-ai-detector-cli/ai_detector_cli/models.py):** Data classes for detection reports, sentence analyses, and engine results.
-  - **[`reporter.py`](file:///Users/king/Downloads/research/2026-08-28-ai-detector-cli/ai_detector_cli/reporter.py):** Terminal rendering, ASCII rhythm graphs, and JSON/Markdown exporters.
-  - **[`engines/`](file:///Users/king/Downloads/research/2026-08-28-ai-detector-cli/ai_detector_cli/engines):** Modular engine implementations (ZeroGPT, GLTR, Burstiness, Perplexity, Lexicon).
-- **[`bin/ai-detect`](file:///Users/king/Downloads/research/2026-08-28-ai-detector-cli/bin/ai-detect):** Standalone executable CLI entry point.
-- **[`tests/test_engines.py`](file:///Users/king/Downloads/research/2026-08-28-ai-detector-cli/tests/test_engines.py):** Full unit test suite.
-- **[`tests/samples/`](file:///Users/king/Downloads/research/2026-08-28-ai-detector-cli/tests/samples):** Benchmark sample files (`ai_sample.txt`, `human_sample.txt`, `mixed_sample.txt`).
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) to pick one up.
 
----
+## Honest Limitations
 
-## 7. Citations & References
+AI-text detection is **probabilistic**. False positives happen (especially on
+short or formulaic human writing) and false negatives happen (light paraphrase
+defeats most detectors, including the commercial ones this tool queries). Use
+`ai-detect` for signal, not verdicts. Live engines are public endpoints and
+may rate-limit or change without notice; the tool degrades gracefully when
+they do.
 
-- **Gehrmann, S., Strobelt, H., & Rush, A. M. (2019).** *GLTR: Statistical Detection and Visualization of Generated Text.* Harvard University & MIT-IBM Watson AI Lab. arXiv:1906.04043.
-- **Mitchell, E., et al. (2023).** *DetectGPT: Zero-Shot Machine-Generated Text Detection using Probability Curvature.* Stanford University. arXiv:2301.11305.
-- **ZeroGPT.** Public Cloud AI Detection API. https://www.zerogpt.com
-- **Turnitin (2024).** *Turnitin’s AI writing detection model architecture and testing protocol.* Technical Whitepaper.
+## License
+
+MIT — see [`LICENSE`](LICENSE).
