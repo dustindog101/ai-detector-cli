@@ -6,7 +6,6 @@ Extracts AI percentage, human percentage, verdict, and highlighted sentences.
 
 import os
 import re
-import json
 import time
 from typing import List, Dict, Any, Optional
 
@@ -219,7 +218,7 @@ class ContentDetectorEngine(BaseEngine):
                     try:
                         dom_info = page.evaluate("""() => {
                             const text = document.body.innerText || "";
-                            
+
                             const scoreMatches = [];
                             const elements = Array.from(document.querySelectorAll('div, span, p, h1, h2, h3, h4, strong, b'));
                             for (const el of elements) {

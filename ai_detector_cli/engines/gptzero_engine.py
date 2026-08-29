@@ -8,7 +8,7 @@ import os
 import re
 import json
 import time
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
 from .base import BaseEngine
 from ..models import EngineResult
@@ -44,16 +44,15 @@ class GPTZeroEngine(BaseEngine):
             )
 
         query_text = text[:MAX_GPTZERO_CHARS]
-        is_truncated = len(text) > MAX_GPTZERO_CHARS
 
         # 1. If official API key provided, use REST API
         if self.api_key:
-            return self._analyze_api(query_text)
+            return self._analyze_api(query_text, truncated=len(text) > MAX_GPTZERO_CHARS)
 
         # 2. Stealth Browser Automation (Patchright / Playwright)
         return self._analyze_stealth_browser(query_text, sentences)
 
-    def _analyze_api(self, text: str) -> EngineResult:
+    def _analyze_api(self, text: str, truncated: bool = False) -> EngineResult:
         import urllib.request
         url = "https://api.gptzero.me/v2/predict/text"
         payload = json.dumps({"document": text, "version": "latest"}).encode("utf-8")
@@ -87,6 +86,7 @@ class GPTZeroEngine(BaseEngine):
                         details={
                             "overall_burstiness": docs.get("overall_burstiness", 0.0),
                             "average_generated_prob": docs.get("average_generated_prob", 0.0),
+                            "truncated": truncated,
                             "method": "official_api"
                         },
                         flagged_sentences=flagged

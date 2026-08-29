@@ -13,8 +13,6 @@ Compatible with Python 3.8+. No third-party dependencies.
 """
 
 import html
-import json
-from typing import List, Optional
 
 from .models import DetectionReport, BatchReport
 

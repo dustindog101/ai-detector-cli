@@ -3,11 +3,9 @@ Engine: Writer.com AI Content Detector (Playwright Browser Automation)
 Automates https://writer.com/ai-content-detector/ using Playwright and extracts AI score.
 """
 
-import os
 import re
-import json
 import time
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from .base import BaseEngine
 from ..models import EngineResult
 

@@ -5,9 +5,8 @@ Automates https://copyleaks.com/ai-content-detector using Patchright/Playwright 
 
 import os
 import re
-import json
 import time
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
 from .base import BaseEngine
 from ..models import EngineResult

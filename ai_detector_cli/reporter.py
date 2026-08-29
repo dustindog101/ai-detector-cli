@@ -4,8 +4,8 @@ Formats console output, sentence-level extraction, ASCII rhythm graphs, and JSON
 """
 
 import json
-from typing import Dict, Any, List, Optional
-from .models import DetectionReport, SentenceAnalysis, BatchEntry, BatchReport
+from typing import List
+from .models import DetectionReport, BatchEntry, BatchReport
 
 
 def format_batch_report(batch: BatchReport) -> str:

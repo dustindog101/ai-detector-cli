@@ -4,7 +4,7 @@ Audits for overrepresented AI vocabulary, formulaic transitions, em dashes, and 
 """
 
 import re
-from typing import List, Dict, Any
+from typing import List
 from .base import BaseEngine
 from ..models import EngineResult
 

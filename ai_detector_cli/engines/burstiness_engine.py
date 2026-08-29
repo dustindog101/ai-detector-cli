@@ -5,7 +5,7 @@ Calculates sentence-length variance, standard deviation, and rhythmic burstiness
 
 import re
 import math
-from typing import List, Dict, Any
+from typing import List
 from .base import BaseEngine
 from ..models import EngineResult
 
@@ -26,7 +26,7 @@ class BurstinessEngine(BaseEngine):
 
         lengths = [len(re.findall(r'\b[A-Za-z0-9\'-]+\b', s)) for s in sentences]
         mean_len = sum(lengths) / len(lengths)
-        variance = sum((l - mean_len) ** 2 for l in lengths) / len(lengths)
+        variance = sum((length - mean_len) ** 2 for length in lengths) / len(lengths)
         std_dev = math.sqrt(variance)
         burstiness = (std_dev / mean_len) if mean_len > 0 else 0
 

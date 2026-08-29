@@ -3,7 +3,7 @@ Engine 2: GLTR (Giant Language Model Test Room) Rank & Entropy Token Model
 Evaluates token prediction rank distributions based on Gehrmann et al. (Harvard/MIT-IBM).
 """
 
-from typing import List, Dict, Any
+from typing import List
 from .base import BaseEngine
 from ..models import EngineResult
 

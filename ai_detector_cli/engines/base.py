@@ -3,8 +3,8 @@ Base engine interface for AI Detector.
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
-from ..models import EngineResult, SentenceAnalysis
+from typing import List
+from ..models import EngineResult
 
 class BaseEngine(ABC):
     name: str = "BaseEngine"

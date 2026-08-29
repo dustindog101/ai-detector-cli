@@ -12,7 +12,6 @@ Endpoint reference (verified 2026-08-29):
   return isHuman=50 with "input more text" feedback.
 """
 
-import json
 from typing import List
 
 from .base import BaseEngine

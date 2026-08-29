@@ -21,7 +21,7 @@ import math
 import time
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Optional
 
 from .models import DetectionReport, SentenceAnalysis, EngineResult, BatchEntry, BatchReport
 from .engines import (
@@ -321,7 +321,7 @@ def analyze_text(
 
     lengths = [len(WORD_RE.findall(s)) for s in sentences]
     mean_len = sum(lengths) / len(lengths) if lengths else 0
-    variance = sum((l - mean_len) ** 2 for l in lengths) / len(lengths) if lengths else 0
+    variance = sum((length - mean_len) ** 2 for length in lengths) / len(lengths) if lengths else 0
     std_dev = math.sqrt(variance)
     burstiness = (std_dev / mean_len) if mean_len > 0 else 0
 

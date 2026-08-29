@@ -5,7 +5,7 @@ Measures vocabulary entropy, n-gram repetitiveness, and formal/informal syntacti
 
 import re
 import math
-from typing import List, Dict, Any
+from typing import List
 from .base import BaseEngine
 from ..models import EngineResult
 

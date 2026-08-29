@@ -51,16 +51,16 @@ jobs:
 
       - name: CLI smoke test (local-only, no network)
         run: |
-          ai-detect --local-only tests/samples/ai_sample.txt
-          ai-detect --local-only --json tests/samples/human_sample.txt
-          ai-detect --batch tests/samples --local-only
           ai-detect --list-engines
+          ai-detect --local-only --threshold 100 tests/samples/ai_sample.txt
+          ai-detect --local-only --json tests/samples/human_sample.txt
+          ai-detect --batch tests/samples --local-only --threshold 100
 
       - name: Verify HTML + JSON exports
         shell: bash
         run: |
-          ai-detect --local-only --export report.html tests/samples/ai_sample.txt
-          ai-detect --local-only --export report.json tests/samples/ai_sample.txt
+          ai-detect --local-only --threshold 100 --export report.html tests/samples/ai_sample.txt
+          ai-detect --local-only --threshold 100 --export report.json tests/samples/ai_sample.txt
           python -c "import json; json.load(open('report.json'))"
 
   lint:

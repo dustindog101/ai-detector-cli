@@ -4,11 +4,9 @@ Automates https://www.scribbr.com/ai-detector/ using Patchright stealth browser.
 Extracts AI likelihood percentage, verdict, and highlighted text.
 """
 
-import os
 import re
-import json
 import time
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from .base import BaseEngine
 from ..models import EngineResult
 from ..stealth import get_stealth_browser
