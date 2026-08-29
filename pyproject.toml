@@ -38,7 +38,7 @@ dependencies = []
 
 [project.optional-dependencies]
 browser = ["patchright>=1.40"]
-pdf = ["pypdf>=3.0", "reportlab>=4.0"]
+pdf = ["pypdf>=3.0", 'reportlab>=4.0; python_version>="3.9"']
 binoculars = ["torch>=2.0", "transformers>=4.40"]
 dev = ["ruff>=0.4", "build>=1.0"]
 

@@ -31,6 +31,31 @@ ORANGE = "#a4551c"
 RED = "#8d2231"
 
 
+_PDF_REQUIREMENT_NOTE = (
+    "PDF export requires the 'reportlab' package on Python 3.9+ (reportlab 4.x "
+    "uses a hashlib API unavailable on 3.8). Install it with: "
+    "pip install 'ai-detector-cli[pdf]'")
+
+
+def _require_reportlab():
+    """Import reportlab and verify the runtime actually supports it.
+
+    reportlab 4.x internally calls hashlib.md5(..., usedforsecurity=False),
+    a keyword argument added in Python 3.9. On 3.8 the import succeeds but
+    document builds crash, so probe the kwarg up front and fail with a
+    clear, actionable message instead.
+    """
+    try:
+        import reportlab  # noqa: F401
+        from reportlab import platypus  # noqa: F401
+    except ImportError as exc:
+        raise SystemExit(_PDF_REQUIREMENT_NOTE) from exc
+    try:
+        hashlib.md5(b"probe", usedforsecurity=False)
+    except TypeError as exc:
+        raise SystemExit(_PDF_REQUIREMENT_NOTE) from exc
+
+
 def _verdict_color(ai_pct: float) -> str:
     if ai_pct < 20.0:
         return GREEN
@@ -390,6 +415,7 @@ def _methodology_section(report: DetectionReport, engine_count: int, st) -> list
 
 def export_pdf_bytes(report: DetectionReport) -> bytes:
     """Render one DetectionReport as an academic PDF document (bytes)."""
+    _require_reportlab()
     try:
         import io
         from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer,
@@ -397,10 +423,7 @@ def export_pdf_bytes(report: DetectionReport) -> bytes:
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.colors import HexColor
     except ImportError as exc:
-        raise SystemExit(
-            "PDF export requires the 'reportlab' package. "
-            "Install it with: pip install 'ai-detector-cli[pdf]'"
-        ) from exc
+        raise SystemExit(_PDF_REQUIREMENT_NOTE) from exc
 
     st = _build_styles()
     rid = _report_id(report.source, f"{report.consensus_ai_probability:.1f}")
