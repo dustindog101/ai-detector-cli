@@ -4,8 +4,96 @@ Formats console output, sentence-level extraction, ASCII rhythm graphs, and JSON
 """
 
 import json
-from typing import Dict, Any, List
-from .models import DetectionReport, SentenceAnalysis
+from typing import Dict, Any, List, Optional
+from .models import DetectionReport, SentenceAnalysis, BatchEntry, BatchReport
+
+
+def format_batch_report(batch: BatchReport) -> str:
+    """Ranked terminal summary for --batch mode."""
+    lines = []
+    lines.append("=" * 96)
+    lines.append(" 🗂️  BATCH AI DETECTION SCAN (RANKED BY AI PROBABILITY)")
+    lines.append("=" * 96)
+    lines.append(f" Mode: {batch.engines_mode}   Threshold: {batch.threshold:.0f}%   Total time: {batch.elapsed_ms:.0f} ms")
+    lines.append("-" * 96)
+    lines.append(f" {'AI %':>6}  {'RISK':<22} | {'WORDS':>6}  {'SENTS':>5}  | FILE")
+    lines.append("-" * 96)
+
+    ok_entries: List[BatchEntry] = []
+    error_entries: List[BatchEntry] = []
+    for entry in batch.entries:
+        if entry.report:
+            ok_entries.append(entry)
+        else:
+            error_entries.append(entry)
+
+    for entry in ok_entries:
+        rep = entry.report
+        marker = "🚩" if rep.consensus_ai_probability > batch.threshold else "  "
+        lines.append(f" {marker}{rep.consensus_ai_probability:>5.1f}%  {rep.risk_level[:22]:<22} | {rep.word_count:>6}  {rep.sentence_count:>5}  | {entry.path}")
+
+    if error_entries:
+        lines.append("-" * 96)
+        for entry in error_entries:
+            lines.append(f"   ERROR {entry.path}: {(entry.error or 'unknown')[:70]}")
+
+    lines.append("-" * 96)
+    if ok_entries:
+        avg = sum(e.report.consensus_ai_probability for e in ok_entries) / len(ok_entries)
+        flagged = sum(1 for e in ok_entries if e.report.consensus_ai_probability > batch.threshold)
+        top = ok_entries[0]
+        lines.append(f" 📊 SUMMARY: {len(ok_entries)} files · mean {avg:.1f}% AI · {flagged} above threshold")
+        lines.append(f" 🥇 MOST AI-LIKE: {top.path} ({top.report.consensus_ai_probability:.1f}%)")
+        clean = len(ok_entries) - flagged
+        lines.append(f" ✅ {clean} file(s) below {batch.threshold:.0f}% threshold")
+    else:
+        lines.append(" 📊 SUMMARY: no files could be analyzed")
+    lines.append("=" * 96)
+    return "\n".join(lines)
+
+
+def export_batch_json(batch: BatchReport) -> str:
+    """JSON serialization for --batch mode."""
+    ok_entries = [e for e in batch.entries if e.report]
+    data = {
+        "mode": "batch",
+        "engines_mode": batch.engines_mode,
+        "threshold": batch.threshold,
+        "elapsed_ms": batch.elapsed_ms,
+        "summary": {
+            "files_total": len(batch.entries),
+            "files_ok": len(ok_entries),
+            "files_failed": len(batch.entries) - len(ok_entries),
+            "mean_ai_probability": round(
+                sum(e.report.consensus_ai_probability for e in ok_entries) / len(ok_entries), 1
+            ) if ok_entries else 0.0,
+            "files_above_threshold": sum(
+                1 for e in ok_entries if e.report.consensus_ai_probability > batch.threshold
+            ),
+        },
+        "files": [
+            {
+                "path": e.path,
+                "ai_percentage": e.report.consensus_ai_probability,
+                "human_percentage": e.report.consensus_human_probability,
+                "verdict": e.report.consensus_verdict,
+                "risk_level": e.report.risk_level,
+                "word_count": e.report.word_count,
+                "sentence_count": e.report.sentence_count,
+                "burstiness_ratio": e.report.burstiness_ratio,
+                "banned_words": e.report.banned_words_found,
+                "engines": {
+                    k: {
+                        "ai_percentage": v.ai_percentage,
+                        "available": v.available,
+                        "verdict": v.verdict,
+                    } for k, v in e.report.engines.items()
+                },
+            } if e.report else {"path": e.path, "error": e.error}
+            for e in batch.entries
+        ],
+    }
+    return json.dumps(data, indent=2)
 
 def format_terminal_report(report: DetectionReport, show_sentences: bool = True, verbose: bool = False) -> str:
     lines = []
@@ -128,6 +216,11 @@ def export_json(report: DetectionReport) -> str:
         "em_dash_count": report.em_dash_count,
         "semicolon_count": report.semicolon_count,
         "tripartite_list_count": report.tripartite_list_count,
+        "source": report.source,
+        "degraded": report.degraded,
+        "degradation_note": report.degradation_note,
+        "analysis_ms": report.analysis_ms,
+        "engine_mode": report.engine_mode,
         "engines": {
             k: {
                 "name": v.engine_name,

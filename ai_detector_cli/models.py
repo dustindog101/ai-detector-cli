@@ -44,3 +44,24 @@ class DetectionReport:
     em_dash_count: int = 0
     semicolon_count: int = 0
     tripartite_list_count: int = 0
+    # --- v2 fields ---
+    source: str = "<stdin>"                # file path / "stdin" / "demo"
+    degraded: bool = False                 # True when live engines fell back to local-only
+    degradation_note: Optional[str] = None
+    analysis_ms: float = 0.0               # wall-clock duration of the analysis
+    engine_mode: str = "default"           # default | live-only | local-only | browser | all
+
+@dataclass
+class BatchEntry:
+    """Result of analyzing one file in batch mode."""
+    path: str
+    report: DetectionReport
+    error: Optional[str] = None            # set when the file could not be read
+
+@dataclass
+class BatchReport:
+    """Aggregate result for --batch mode."""
+    entries: List[BatchEntry] = field(default_factory=list)
+    threshold: float = 30.0
+    engines_mode: str = "local-only"
+    elapsed_ms: float = 0.0
