@@ -211,7 +211,8 @@ class TestHTMLExport(unittest.TestCase):
         self.assertIn('class="cad"', html)                 # cadence chart
         self.assertIn("How the consensus is computed".replace(
             "How the consensus is computed", "Computation of the consensus"), html)
-        self.assertIn("v2.3.0", html)                      # version chip
+        from ai_detector_cli import __version__
+        self.assertIn("v" + __version__, html)             # version chip
         self.assertIn("UTC", html)                         # issued stamp
         # Engine details are collapsible, not lost
         self.assertIn("<details", html)

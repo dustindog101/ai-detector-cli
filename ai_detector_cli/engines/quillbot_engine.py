@@ -93,7 +93,13 @@ class QuillBotEngine(BaseEngine):
                     time.sleep(1)
                     scan_btn = page.query_selector("button:has-text('Detect AI'), button:has-text('Scan text'), button:has-text('Scan')")
                     if scan_btn:
-                        scan_btn.click()
+                        # JS click: the button is often covered by overlays or
+                        # outside the viewport, so Playwright's actionability
+                        # checks time out even though the click works.
+                        try:
+                            scan_btn.evaluate("b => b.click()")
+                        except Exception:
+                            scan_btn.click()
                         time.sleep(6)
 
                 body_text = page.inner_text("body")

@@ -14,6 +14,7 @@ if pkg_dir not in sys.path:
 
 from ai_detector_cli.engines.quillbot_engine import QuillBotEngine
 from ai_detector_cli.engines.scribbr_engine import ScribbrEngine
+from ai_detector_cli.engines.zerogptcom_engine import ZeroGPTComEngine
 
 def main():
     sample_ai_text = (
@@ -58,6 +59,21 @@ def main():
     print(f"Scribbr Human Text Result: Available={sc_res_human.available}, AI%={sc_res_human.ai_percentage}%, Verdict={sc_res_human.verdict}")
     if sc_res_human.error:
         print(f"Error: {sc_res_human.error}")
+
+    print("\n" + "=" * 70)
+    print("Testing ZeroGPT.com Web Engine...")
+    print("=" * 70)
+    zg = ZeroGPTComEngine()
+    zg_res_ai = zg.analyze(sample_ai_text)
+    print(f"ZeroGPT.com AI Text Result: Available={zg_res_ai.available}, AI%={zg_res_ai.ai_percentage}%, Verdict={zg_res_ai.verdict}")
+    print(f"Details: {zg_res_ai.details}")
+    if zg_res_ai.error:
+        print(f"Error: {zg_res_ai.error}")
+
+    zg_res_human = zg.analyze(sample_human_text)
+    print(f"ZeroGPT.com Human Text Result: Available={zg_res_human.available}, AI%={zg_res_human.ai_percentage}%, Verdict={zg_res_human.verdict}")
+    if zg_res_human.error:
+        print(f"Error: {zg_res_human.error}")
 
 if __name__ == "__main__":
     main()

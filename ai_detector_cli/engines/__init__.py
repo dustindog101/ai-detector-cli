@@ -28,6 +28,7 @@ from .writer_engine import WriterEngine
 from .contentdetector_engine import ContentDetectorEngine
 from .isgen_engine import IsGenEngine
 from .grammarly_engine import GrammarlyEngine
+from .zerogptcom_engine import ZeroGPTComEngine
 from .gptzero_api_engine import GPTZeroApiEngine
 from .winston_engine import WinstonEngine
 from .originality_engine import OriginalityEngine
@@ -51,6 +52,7 @@ __all__ = [
     "ContentDetectorEngine",
     "IsGenEngine",
     "GrammarlyEngine",
+    "ZeroGPTComEngine",
     "GPTZeroApiEngine",
     "WinstonEngine",
     "OriginalityEngine",
@@ -124,6 +126,7 @@ BROWSER_ENGINES = [
     ContentDetectorEngine(),
     IsGenEngine(),
     GrammarlyEngine(),
+    ZeroGPTComEngine(),
 ]
 
 

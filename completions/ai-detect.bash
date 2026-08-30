@@ -18,7 +18,7 @@ _ai_detect_completions() {
         --compare|-c)
             COMPREPLY=( $(compgen -f -- "${cur}") ) ;;
         --engines)
-            local engines="zerogpt sapling gltr burstiness perplexity lexicon gptzero copyleaks quillbot scribbr writer contentdetector isgen gptzero-api winston originality pangram detecting-ai binoculars"
+            local engines="zerogpt sapling gltr burstiness perplexity lexicon gptzero copyleaks quillbot scribbr writer contentdetector isgen gptzero-api winston originality pangram detecting-ai binoculars grammarly zerogptcom"
             COMPREPLY=( $(compgen -W "${engines}" -- "${cur}") ) ;;
         *)
             COMPREPLY=( $(compgen -W "${flags}" -- "${cur}") $(compgen -f -X '!*.@(txt|md|markdown|rtf|json|csv|html|htm|docx|pdf)' -- "${cur}") ) ;;
