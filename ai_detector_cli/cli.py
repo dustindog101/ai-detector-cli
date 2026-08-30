@@ -547,7 +547,7 @@ def list_engines() -> str:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="ai-detect",
-        description="Multi-Format AI Text Detector CLI (20 engines: live cloud HTTP, premium key-based APIs, local neural & statistical models, stealth browser automation)"
+        description="Multi-Format AI Text Detector CLI (21 engines: live cloud HTTP, premium key-based APIs, local neural & statistical models, stealth browser automation)"
     )
     parser.add_argument("file", nargs="?", help="Path to text, markdown, docx, pdf, html, json, or csv document to audit")
     parser.add_argument("--compare", "-c", nargs=2, metavar=("ORIGINAL", "MODIFIED"), help="Compare original vs modified documents across all engines")

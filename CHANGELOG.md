@@ -4,6 +4,33 @@ All notable changes to this project are documented in this file.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.4.0] - 2026-08-30
+
+### Added
+- **ZeroGPT.com Web Detector engine** (`zerogptcom`, stealth browser tier):
+  automates zerogpt.com's free web UI (15,000-char cap) and parses the
+  headline "N% AI GPT*" score plus verdict banner. Distinct from the
+  `zerogpt` JSON-API engine - it shares the backend but travels through the
+  ad-stack-protected web path, so it keeps working when the undocumented API
+  shape changes. Verified live on 2026-08-30 under both drivers: AI sample
+  -> 100% AI, human sample -> 0% AI. Registry grows to 21 engines.
+- **Camoufox stealth-Firefox driver** (new `[camoufox]` extra): every stealth
+  browser engine can now run on Camoufox, the fingerprint-randomized Firefox
+  build, in addition to Patchright/Playwright Chromium. Driver is chosen via
+  `AIDETECT_STEALTH_DRIVER=patchright|playwright|camoufox` (default
+  `auto`: Patchright -> Playwright -> Camoufox). Fetched once with
+  `python -m camoufox fetch`.
+- **QuillBot engine JS-click fix**: submit now uses a DOM click first because
+  the site's overlays break Playwright actionability checks.
+
+### Documented
+- Fleet health audit (2026-08-30) of every free public detector reachable
+  headlessly: Grammarly and ZeroGPT.com pass; GPTZero/CopyLeaks/Scribbr/
+  IsGen web tiers are now login- or challenge-gated, Writer's free page was
+  removed, ContentDetector.ai sits behind a Cloudflare challenge. Engines
+  remain registered (graceful degradation) and the full methodology lives in
+  `docs/ENGINES.md`.
+
 ## [2.3.0] - 2026-08-29
 
 ### Added

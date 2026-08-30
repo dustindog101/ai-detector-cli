@@ -1,9 +1,9 @@
 <div align="center">
 
-<img src="https://img.shields.io/badge/🛡️_ai--detect-19_engines-3b4fd8?style=for-the-badge&labelColor=24307a" alt="ai-detect" height="34"><br>
+<img src="https://img.shields.io/badge/🛡️_ai--detect-21_engines-3b4fd8?style=for-the-badge&labelColor=24307a" alt="ai-detect" height="34"><br>
 
 **Multi-Engine AI Text Detector CLI**<br>
-*Run your text through 20 detection engines at once — get one weighted consensus, sentence-level evidence, and an in-depth HTML audit report.*
+*Run your text through 21 detection engines at once — get one weighted consensus, sentence-level evidence, and an in-depth HTML audit report.*
 
 [![CI](https://github.com/dustindog101/ai-detector-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/dustindog101/ai-detector-cli/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/dustindog101/ai-detector-cli/actions/workflows/codeql.yml/badge.svg)](https://github.com/dustindog101/ai-detector-cli/actions/workflows/codeql.yml)
@@ -68,6 +68,7 @@ Flags: `--prefix DIR` · `--ref REF` · `--repo URL` · `--no-completions`
 pip install ai-detector-cli
 # optional extras:
 pip install "ai-detector-cli[browser]"     # stealth browser engines (patchright)
+pip install "ai-detector-cli[camoufox]"   # alternative stealth-Firefox driver
 pip install "ai-detector-cli[pdf]"         # full .pdf text extraction (pypdf)
 pip install "ai-detector-cli[binoculars]"  # local neural detector (torch + transformers)
 ```
@@ -144,6 +145,8 @@ usage: ai-detect [file] [-c ORIG MOD] [-b DIR] [flags]
   --live-only            only ZeroGPT + Sapling cloud APIs
   --local-only           only local statistical engines (offline, private)
   --browser              add stealth browser engines (needs patchright)
+                                   AIDETECT_STEALTH_DRIVER=patchright|playwright|camoufox
+                                   pins the stealth driver (default: auto)
   --all                  every engine (HTTP + browser + local)
   --workers, -w N        concurrent engine workers (default 6)
   --timeout SEC          global HTTP timeout (default 10; env AIDETECT_TIMEOUT)
@@ -167,7 +170,7 @@ usage: ai-detect [file] [-c ORIG MOD] [-b DIR] [flags]
 | **Premium API** (auto when key set) | GPTZero Official, Pangram, Winston AI, Originality.ai, Detecting-AI | ~0.5–5 s | Yes |
 | **Local neural** (`--engines binoculars` / `AIDETECT_BINOCULARS=1`) | Binoculars (Falcon-7B pair, ICML 2024) | ~2–60 s first run | None* |
 | **Local statistical** (default) | GLTR token-rank, Burstiness σ/μ, Perplexity/entropy, PubMed AI-lexicon | < 5 ms each | None |
-| **Stealth browser** (`--browser`) | GPTZero, CopyLeaks, QuillBot, Scribbr, Writer, ContentDetector.ai, IsGen, Grammarly | 10–60 s | Yes |
+| **Stealth browser** (`--browser`) | GPTZero, CopyLeaks, QuillBot, Scribbr, Writer, ContentDetector.ai, IsGen, Grammarly, ZeroGPT.com | 10–60 s | Yes |
 
 \* first run downloads model weights; afterwards fully offline.
 
@@ -239,7 +242,7 @@ dashboards.
 
 **Shipped**
 
-- [x] 20-engine registry: live cloud, premium key APIs, stealth browser (incl. Grammarly), local statistical
+- [x] 21-engine registry: live cloud, premium key APIs, stealth browser (incl. Grammarly + ZeroGPT.com), local statistical
 - [x] Local neural detector (Binoculars, v2.1)
 - [x] Weighted consensus + sentence-level explanations
 - [x] Batch mode, compare mode, JSON automation

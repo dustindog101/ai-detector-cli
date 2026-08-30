@@ -4,7 +4,7 @@ Multi-engine AI text detection with live cloud APIs, premium key-based APIs,
 local neural & statistical models, and stealth browser engines.
 """
 
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 
 from .cli import analyze_text, run_batch, main, load_document
 from .models import DetectionReport, EngineResult, SentenceAnalysis, BatchEntry, BatchReport

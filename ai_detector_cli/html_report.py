@@ -329,7 +329,7 @@ _TIER_NEURAL = {"Binoculars (Local Neural)"}
 _TIER_BROWSER = {
     "GPTZero Detector", "CopyLeaks AI Detector", "QuillBot AI Detector",
     "Scribbr AI Detector", "Writer.com AI Detector", "ContentDetector.ai",
-    "IsGen AI Detector", "Grammarly AI Detector",
+    "IsGen AI Detector", "Grammarly AI Detector", "ZeroGPT.com Web Detector",
 }
 _TIER_ORDER = [
     "Live Cloud APIs",

@@ -23,7 +23,9 @@ from ai_detector_cli.engines import (
     WriterEngine,
     GPTZeroEngine,
     CopyLeaksEngine,
-    IsGenEngine
+    IsGenEngine,
+    ZeroGPTComEngine,
+    GrammarlyEngine,
 )
 
 class TestAIDetectorEngines(unittest.TestCase):
@@ -128,6 +130,29 @@ class TestAIDetectorEngines(unittest.TestCase):
         self.assertEqual(eng.weight, 0.25)
         res_empty = eng.analyze("")
         self.assertFalse(res_empty.available)
+
+    def test_grammarly_engine_interface(self):
+        eng = GrammarlyEngine()
+        self.assertEqual(eng.name, "Grammarly AI Detector")
+        res_empty = eng.analyze("")
+        self.assertFalse(res_empty.available)
+
+    def test_zerogptcom_engine_interface(self):
+        eng = ZeroGPTComEngine()
+        self.assertEqual(eng.name, "ZeroGPT.com Web Detector")
+        self.assertEqual(eng.weight, 0.35)
+        res_empty = eng.analyze("")
+        self.assertFalse(res_empty.available)
+        short = eng.analyze("too short", words=["too", "short"])
+        self.assertFalse(short.available)
+        self.assertIn("words", (short.error or "").lower())
+
+    def test_registry_counts(self):
+        from ai_detector_cli import engines as reg
+        self.assertEqual(len(reg.BROWSER_ENGINES), 9)
+        self.assertGreaterEqual(len(reg.ALL_ENGINES), 21)
+        names = [e.name for e in reg.BROWSER_ENGINES]
+        self.assertIn("ZeroGPT.com Web Detector", names)
 
 if __name__ == "__main__":
     unittest.main()

@@ -201,23 +201,52 @@ threshold lands at ~14%, and reports the raw score in `details.binoculars_score`
 
 ## Stealth Browser Engines (`--browser` / `--all`)
 
-These automate public web UIs through Patchright (preferred) or Playwright
-with anti-detection patches. They are slow (10–60 s each) and break when sites
-redesign; treat their results as advisory.
+These automate public web UIs through Patchright or Playwright (stealth
+Chromium) or Camoufox (stealth Firefox). They are slow (10–60 s each) and
+break when sites redesign; treat their results as advisory.
 
 | Engine key | Site | Notes |
 | :--- | :--- | :--- |
-| `gptzero` | gptzero.me | Web-UI automation; prefer the official `gptzero-api` engine |
-| `copyleaks` | copyleaks.com | Requires `COPYLEAKS_API_KEY` / `COPYLEAKS_EMAIL` |
-| `quillbot` | quillbot.com/ai-content-detector | Needs ≥ 80 words, ≤ 1,100 words |
-| `scribbr` | scribbr.com/ai-detector | ≤ 1,100 words |
-| `writer` | writer.com/ai-content-detector | Extracts human-score ratio |
-| `contentdetector` | contentdetector.ai | Extracts percentage + DOM highlights |
-| `isgen` | isgen.ai | Simple percentage extraction |
+| `zerogptcom` | zerogpt.com | 1–15,000 chars; headline "N% AI GPT*" + verdict banner. Verified 2026-08-30: AI 100% / human 0% |
+| `gptzero` | gptzero.me | Web-UI automation; prefer the official `gptzero-api` engine. **2026-08-30: free scan now effectively login-gated** |
+| `copyleaks` | copyleaks.com | Requires `COPYLEAKS_API_KEY` / `COPYLEAKS_EMAIL`. **2026-08-30: web scanner is signup-walled** |
+| `quillbot` | quillbot.com/ai-content-detector | Needs ≥ 80 words, ≤ 1,100 words. **2026-08-30: silent gating headlessly (no result renders)** |
+| `scribbr` | scribbr.com/ai-detector | ≤ 1,100 words. **2026-08-30: tool iframe no longer materializes headlessly** |
+| `writer` | writer.com/ai-content-detector | **2026-08-30: free page removed (redirects to enterprise homepage)** |
+| `contentdetector` | contentdetector.ai | **2026-08-30: behind Cloudflare "Robot Challenge"** |
+| `isgen` | isgen.ai | **2026-08-30: submit is login-gated; page only exposes marketing stats** |
+| `grammarly` | grammarly.com/ai-detector | Verified working 2026-08-29 and 2026-08-30 (both drivers) |
 
-**Browser discovery order** (all engines): `AIDETECT_CHROME_PATH` env var →
-explicit `executable_path` → well-known macOS/Linux/Windows install locations
-→ `PATH` lookup → Patchright/Playwright bundled Chromium.
+### Fleet health audit (2026-08-30)
+
+A two-driver sweep (Patchright Chromium vs Camoufox Firefox) over 24 free
+public detector sites found that anti-bot coverage is identical across both
+drivers: Camoufox bypassed nothing Chromium could not. Sites reachable
+headlessly end-to-end at that date: **grammarly.com** and **zerogpt.com**
+(plus the existing JSON-API engines). Everything else is Cloudflare- or
+Turnstile-gated (`gptinf`, `ivypanda`, `papersowl`, `phrasly`),
+CAPTCHA-gated (`ahelp`, `duplichecker`), login-walled (`smodin` accuracy
+also failed discrimination checks — flagged a clearly human text at 78–95%
+AI; `justdone`, `undetectable`, `hive`, `crossplag`, `humbot`), or removed.
+Unavailable engines always drop out of the consensus denominator — they are
+never silently counted as "human".
+
+### Stealth driver selection
+
+```
+AIDETECT_STEALTH_DRIVER = patchright | playwright | camoufox | auto   (default: auto)
+```
+
+- `auto`: Patchright Chromium → Playwright Chromium → Camoufox Firefox
+- Pin `camoufox` when a site hard-blocks Chromium-family automation; install
+  with `pip install "ai-detector-cli[camoufox]"` and fetch the browser once
+  via `python -m camoufox fetch`.
+- Chromium-specific discovery is skipped under `camoufox` (it ships its own
+  hardened Firefox build with randomized fingerprints).
+
+**Browser discovery order** (Chromium drivers): `AIDETECT_CHROME_PATH` env
+var → explicit `executable_path` → well-known macOS/Linux/Windows install
+locations → `PATH` lookup → Patchright/Playwright bundled Chromium.
 
 Install browser drivers with: `pip install "ai-detector-cli[browser]"` then
 `patchright install chromium` (or use any locally installed Chrome/Edge/Brave).
